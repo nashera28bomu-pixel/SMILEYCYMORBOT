@@ -1,132 +1,223 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const express = require('express');
 const pino = require('pino');
+const axios = require('axios');
 const ytdl = require('ytdl-core');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
+const ADMIN_PASSWORD = "bomu@09";
 
+// --- STATE ---
+let sock = null;
+let botStatus = "STARTING...";
+let lastPairingCode = "Not Generated";
+let isConnecting = false;
+
+let users = new Set();
+let commandLogs = [];
+
+// --- MIDDLEWARE ---
 app.use(express.urlencoded({ extended: true }));
 
-// --- BOT STATE ---
-let sock = null;
-let botStatus = "IDLE";
-let lastPairingCode = "Not Generated";
+// --- MENU ---
+const getMenu = () => `
+✨ *SMILEY CYMOR BOT* ✨
 
-// --- ENHANCED MENU (WhatsApp View) ---
-const getMenu = () => {
-    return `
-╭═════════════════════════════╮
-      ✨ *SMILEY CYMOR BOT* ✨
-╰═════════════════════════════╯
+🤖 Status: ${botStatus}
 
-🤖 *STATUS:* ${botStatus}
-📅 *DATE:* ${new Date().toLocaleDateString()}
+⚡ Utility: !ping !time !date !uptime
+🎲 Fun: !joke !quote !flip !roll
+🎵 Media: !mp3 [link]
+🧠 AI: !ai [text]
+🎨 Creative: !reverse !bold !italic
+👤 Profile: !owner !help
+`;
 
-〔 ⚡ *UTILITY* 〕
-• !ping • !uptime • !id • !date • !speed
-
-〔 ☁️ *WEATHER* 〕
-• !weather [city]
-
-〔 🎲 *FUN & GAMES* 〕
-• !flip • !roll • !joke • !quote • !trivia
-
-〔 🛡️ *MANAGEMENT* 〕
-• !kick • !ban • !promote • !groupinfo
-
-〔 🎨 *CREATIVE* 〕
-• !script • !plot • !idea • !sticker • !song
-
-╭═════════════════════════════╮
-    *©️ CYMOR TECH 2026*
-╰═════════════════════════════╯`;
-};
-
-// --- COMMANDS OBJECT ---
-const commands = {
-    'Utility': ['ping', 'uptime', 'status', 'id', 'date', 'time', 'speed', 'ram', 'info'],
-    'Weather': ['weather'],
-    'Fun': ['flip', 'roll', 'joke', 'quote', 'trivia', 'riddle', 'dice', 'truth', 'dare', 'hack'],
-    'Profile': ['profile', 'contact', 'slogan', 'bio', 'owner', 'greet', 'bye', 'thanks', 'help', 'credits'],
-    'Management': ['kick', 'ban', 'promote', 'demote', 'groupinfo', 'delete', 'pin', 'unpin', 'block', 'unblock', 'mute', 'unmute', 'report', 'warn', 'promoteall'],
-    'Creative': ['script', 'plot', 'idea', 'sum', 'trans', 'define', 'search', 'lyrics', 'anime', 'movie', 'calc', 'reverse', 'bold', 'italic', 'sticker', 'song']
-};
-
-// --- CORE BOT LOGIC ---
+// --- BOT ---
 async function startBot() {
+    if (isConnecting) return;
+    isConnecting = true;
+
     const { state, saveCreds } = await useMultiFileAuthState('./auth_info');
-    sock = makeWASocket({ logger: pino({ level: 'silent' }), auth: state });
+
+    sock = makeWASocket({
+        auth: state,
+        logger: pino({ level: "silent" })
+    });
 
     sock.ev.on('creds.update', saveCreds);
 
     sock.ev.on('connection.update', (update) => {
-        const { connection } = update;
-        if (connection === 'open') botStatus = "ONLINE";
-        if (connection === 'close') {
-            botStatus = "OFFLINE";
-            startBot(); 
+        const { connection, lastDisconnect } = update;
+
+        if (connection === "open") {
+            botStatus = "ONLINE ✅";
+            isConnecting = false;
+        }
+
+        if (connection === "close") {
+            botStatus = "RECONNECTING...";
+            isConnecting = false;
+
+            if (lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut) {
+                startBot();
+            }
         }
     });
 
     sock.ev.on('messages.upsert', async ({ messages }) => {
         const msg = messages[0];
         if (!msg.message) return;
-        
+
+        const from = msg.key.remoteJid;
         const text = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
-        if (text === '!menu') await sock.sendMessage(msg.key.remoteJid, { text: getMenu() });
+
+        users.add(from);
+
+        // --- LOG COMMAND ---
+        if (text.startsWith('!')) {
+            commandLogs.unshift(text);
+            commandLogs = commandLogs.slice(0, 20);
+        }
+
+        // --- COMMANDS ---
+        if (text === '!menu') return sock.sendMessage(from, { text: getMenu() });
+
+        if (text === '!ping') return sock.sendMessage(from, { text: "PONG 🏓" });
+
+        if (text === '!time') return sock.sendMessage(from, { text: new Date().toLocaleTimeString() });
+
+        if (text === '!date') return sock.sendMessage(from, { text: new Date().toDateString() });
+
+        if (text === '!flip') return sock.sendMessage(from, { text: Math.random() > 0.5 ? "HEADS" : "TAILS" });
+
+        if (text === '!roll') return sock.sendMessage(from, { text: `🎲 ${Math.floor(Math.random()*6)+1}` });
+
+        if (text === '!joke') {
+            const res = await axios.get('https://official-joke-api.appspot.com/random_joke');
+            return sock.sendMessage(from, { text: `${res.data.setup}\n${res.data.punchline}` });
+        }
+
+        if (text.startsWith('!reverse ')) {
+            return sock.sendMessage(from, { text: text.slice(9).split('').reverse().join('') });
+        }
+
+        if (text.startsWith('!bold ')) {
+            return sock.sendMessage(from, { text: `*${text.slice(6)}*` });
+        }
+
+        if (text.startsWith('!italic ')) {
+            return sock.sendMessage(from, { text: `_${text.slice(8)}_` });
+        }
+
+        // --- AI CHAT ---
+        if (text.startsWith('!ai ')) {
+            return sock.sendMessage(from, { text: "AI feature coming soon 🚀" });
+        }
+
+        // --- MP3 DOWNLOAD ---
+        if (text.startsWith('!mp3 ')) {
+            try {
+                const url = text.split(' ')[1];
+                const info = await ytdl.getInfo(url);
+                const title = info.videoDetails.title;
+
+                const stream = ytdl(url, { filter: 'audioonly' });
+
+                await sock.sendMessage(from, {
+                    audio: stream,
+                    mimetype: 'audio/mpeg'
+                });
+
+            } catch {
+                sock.sendMessage(from, { text: "Failed to download MP3" });
+            }
+        }
     });
 }
 
-// --- WEB DASHBOARD (COOL UI) ---
+// --- UI ---
 app.get('/', (req, res) => {
     res.send(`
-    <!DOCTYPE html>
     <html>
     <head>
-        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
         <script src="https://cdn.tailwindcss.com"></script>
-        <style>
-            body { background: #050505; color: #00ff41; font-family: 'Orbitron', sans-serif; }
-            .glass { background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(15px); border: 1px solid #00ff41; box-shadow: 0 0 15px rgba(0, 255, 65, 0.2); }
-            .btn-glow { box-shadow: 0 0 20px #00ff41; }
-        </style>
     </head>
-    <body class="p-8">
-        <div class="max-w-2xl mx-auto glass p-8 rounded-3xl">
-            <h1 class="text-4xl font-bold mb-2 text-center tracking-widest">CYMOR_BOT</h1>
-            <p class="text-center text-sm mb-8 animate-pulse text-gray-400">SYSTEM STATUS: ${botStatus}</p>
-            
-            <div class="space-y-6">
-                <form action="/pair" method="POST" class="flex flex-col gap-4">
-                    <input name="number" placeholder="ENTER NUMBER (254...)" class="bg-black border border-green-500 p-4 rounded-lg outline-none text-center">
-                    <button class="bg-green-600 hover:bg-green-500 text-black font-bold p-4 rounded-lg btn-glow transition-all">GENERATE LINK</button>
-                </form>
-                
-                <div class="border-t border-green-900 pt-6">
-                    <h3 class="mb-4 text-sm uppercase">Command Directory</h3>
-                    <div class="grid grid-cols-2 gap-4 text-xs opacity-80">
-                        ${Object.keys(commands).map(cat => `
-                            <div>
-                                <span class="text-green-500 font-bold block">${cat}</span>
-                                <ul class="mt-2">
-                                    ${commands[cat].slice(0, 3).map(c => `<li>!${c}</li>`).join('')}
-                                </ul>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>
-        </div>
+
+    <body class="bg-black text-green-400 min-h-screen flex flex-col items-center justify-center">
+
+        <h1 class="text-5xl font-bold">CYMOR BOT</h1>
+        <p class="mb-4">Status: ${botStatus}</p>
+
+        <form action="/pair" method="POST" class="flex flex-col gap-4 w-80">
+            <input name="number" placeholder="254..." class="p-3 bg-black border border-green-500">
+            <button class="bg-green-500 text-black p-3">PAIR</button>
+        </form>
+
+        <h2 class="mt-4 text-2xl">${lastPairingCode}</h2>
+
+        <a href="/admin" class="mt-4 underline">Admin</a>
+
     </body>
-    </html>`);
+    </html>
+    `);
 });
 
+// --- PAIR ---
 app.post('/pair', async (req, res) => {
-    if (!sock) await startBot();
     try {
+        if (!sock) await startBot();
         lastPairingCode = await sock.requestPairingCode(req.body.number);
-        res.redirect('/');
-    } catch (e) { res.send("Error: Please restart or check logs."); }
+    } catch {
+        lastPairingCode = "ERROR";
+    }
+    res.redirect('/');
 });
 
-app.listen(PORT, () => startBot());
+// --- ADMIN ---
+app.get('/admin', (req, res) => {
+    res.send(`
+    <form method="POST">
+        <input name="password" placeholder="Password"/>
+        <button>Login</button>
+    </form>
+    `);
+});
+
+app.post('/admin', (req, res) => {
+    if (req.body.password !== ADMIN_PASSWORD) return res.send("Wrong password");
+
+    res.send(`
+    <h1>ADMIN DASHBOARD</h1>
+
+    <p>Users: ${users.size}</p>
+    <p>Status: ${botStatus}</p>
+
+    <h3>Recent Commands:</h3>
+    <ul>${commandLogs.map(c => `<li>${c}</li>`).join('')}</ul>
+
+    <form method="POST" action="/broadcast">
+        <input name="msg" placeholder="Broadcast message"/>
+        <button>Send</button>
+    </form>
+
+    <a href="/">Back</a>
+    `);
+});
+
+// --- BROADCAST ---
+app.post('/broadcast', async (req, res) => {
+    const msg = req.body.msg;
+
+    for (let user of users) {
+        await sock.sendMessage(user, { text: msg });
+    }
+
+    res.send("Sent to all users ✅");
+});
+
+// --- START ---
+app.listen(PORT, () => {
+    startBot();
+});
