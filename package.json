@@ -1,21 +1,35 @@
 {
-  "name": "eryx-neural-interface",
+  "name": "smiley-cymor-bot",
   "version": "2.0.0",
-  "description": "The sentient AI entity - Eryx",
+  "description": "Cymor Premium WhatsApp Bot (Multi-Session + Dashboard)",
   "main": "index.js",
+  "type": "commonjs",
+
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "node --watch index.js"
   },
+
   "dependencies": {
-    "@whiskeysockets/baileys": "^6.5.0",
-    "@google/generative-ai": "^0.11.0",
-    "baileys-mongodb-library": "^1.0.4",
-    "mongoose": "^8.0.0",
-    "express": "^4.21.0",
-    "pino": "^9.0.0",
-    "axios": "^1.6.0"
+    "@whiskeysockets/baileys": "^6.7.8",
+    "express": "^4.19.2",
+    "express-session": "^1.17.3",
+    "pino": "^8.17.0",
+    "archiver": "^6.0.2"
   },
+
   "engines": {
-    "node": ">=20.0.0"
-  }
+    "node": ">=18.0.0"
+  },
+
+  "keywords": [
+    "whatsapp-bot",
+    "baileys",
+    "multi-session",
+    "nodejs",
+    "express"
+  ],
+
+  "author": "Simion Nashera",
+  "license": "ISC"
 }
