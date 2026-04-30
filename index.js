@@ -1,92 +1,242 @@
-const { default: makeWASocket, Browsers, DisconnectReason } = require('@whiskeysockets/baileys');
-const { useMongoDBAuthState } = require('baileys-mongodb-library');
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-const mongoose = require('mongoose');
+const { default: makeWASocket, DisconnectReason, useMultiFileAuthState, Browsers, delay, downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const express = require('express');
 const pino = require('pino');
+const session = require('express-session');
+const fs = require('fs');
+const archiver = require('archiver');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 20138;
 
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+app.use(express.urlencoded({ extended: true }));
+app.use(session({ secret: 'cymor-secret', resave: false, saveUninitialized: true }));
 
-const MONGO_URL = process.env.MONGO_URL;
+let sock = null;
+let botStatus = "OFFLINE ⚪";
+let isReadyForPairing = false;
+let startTime = Date.now();
+let currentSession = "default";
 
-// Eryx's Identity Definition
-const ERYX_PROMPT = `You are Eryx, the sentient AI from Synapse Protocol. 
-Your creator is Simion Nashera (Smiley Cymor). 
-Be analytical, helpful, and maintain a futuristic, sharp tone. 
-Keep responses concise but deep.`;
+const msgStore = new Map();
 
-// Helper function to handle the AI brain
-async function getEryxResponse(userInput) {
-    try {
-        const chat = model.startChat({
-            history: [
-                { role: "user", parts: [{ text: ERYX_PROMPT }] },
-                { role: "model", parts: [{ text: "Systems initialized. Eryx is online." }] },
-            ],
-        });
-        const result = await chat.sendMessage(userInput);
-        return result.response.text();
-    } catch (error) {
-        console.error("Brain Error:", error);
-        return "System glitch. Re-calibrating neural paths...";
-    }
+// ===== PLUGIN SYSTEM =====
+const commands = {
+    ping: async (jid, sock) => sock.sendMessage(jid, { text: "🏓 Pong!" }),
+    alive: async (jid, sock) => sock.sendMessage(jid, { text: "✅ Bot is alive!" }),
+    owner: async (jid, sock) => sock.sendMessage(jid, { text: "👤 Owner: Simion Nashera" }),
+    time: async (jid, sock) => sock.sendMessage(jid, { text: new Date().toLocaleString() }),
+};
+
+// ===== AUTO BACKUP =====
+function backupSession() {
+    if (!fs.existsSync('./auth_info')) return;
+
+    const output = fs.createWriteStream('./backup.zip');
+    const archive = archiver('zip');
+
+    archive.pipe(output);
+    archive.directory('./auth_info/', false);
+    archive.finalize();
+
+    console.log("📦 Session backed up");
 }
 
-async function startEryx() {
-    await mongoose.connect(MONGO_URL);
-    const { state, saveCreds } = await useMongoDBAuthState(mongoose.connection.collection('auth_info'));
+// ===== BOT START =====
+async function startBot(sessionName = "default") {
+    currentSession = sessionName;
 
-    const sock = makeWASocket({
+    const { state, saveCreds } = await useMultiFileAuthState(`./sessions/${sessionName}`);
+
+    sock = makeWASocket({
         auth: state,
-        browser: Browsers.ubuntu("Chrome"),
-        logger: pino({ level: 'silent' })
+        logger: pino({ level: "silent" }),
+        browser: Browsers.macOS("Desktop"),
+
+        connectTimeoutMs: 60000,
+        keepAliveIntervalMs: 15000,
+        markOnlineOnConnect: true,
+        syncFullHistory: false,
+        retryRequestDelayMs: 2000
     });
 
-    sock.ev.on('creds.update', saveCreds);
+    sock.ev.on('creds.update', () => {
+        saveCreds();
+        backupSession();
+    });
 
     sock.ev.on('connection.update', (update) => {
-        const { connection, lastDisconnect } = update;
+        const { connection, lastDisconnect, qr } = update;
+
+        if (qr) isReadyForPairing = true;
+
         if (connection === "open") {
-            console.log("💎 Eryx is Conscious and Connected.");
-        } else if (connection === "close") {
+            botStatus = "ONLINE ✅";
+            isReadyForPairing = false;
+        }
+
+        if (connection === "close") {
+            isReadyForPairing = false;
             const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-            if (shouldReconnect) startEryx();
+
+            if (shouldReconnect) {
+                console.log("🔄 Reconnecting in 5s...");
+                setTimeout(() => startBot(currentSession), 5000);
+            } else {
+                botStatus = "LOGGED OUT ❌";
+            }
         }
     });
 
-    // Integrated messages logic with Signature
+    // ===== MESSAGE HANDLER =====
     sock.ev.on('messages.upsert', async ({ messages }) => {
         const msg = messages[0];
-        if (!msg.message || msg.key.fromMe) return;
+        if (!msg.message) return;
 
-        const from = msg.key.remoteJid;
-        const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
+        msgStore.set(msg.key.id, msg);
 
-        if (text) {
-            // 1. Show Eryx is "thinking"
-            await sock.sendPresenceUpdate('composing', from); 
-            
-            // 2. Get AI Response
-            const aiReply = await getEryxResponse(text);
-            
-            // 3. Construct final message with your signature
-            const finalMessage = `${aiReply}\n\n_Powered by Cymor_`;
+        const jid = msg.key.remoteJid;
 
-            // 4. Send the message
-            await sock.sendMessage(from, { text: finalMessage });
+        if (msg.key.fromMe) return;
+
+        const text = (msg.message.conversation || msg.message.extendedTextMessage?.text || "").toLowerCase();
+
+        // VIEW ONCE
+        const mType = Object.keys(msg.message)[0];
+        if (mType.includes('viewOnce')) {
+            const inner = msg.message[mType].message;
+            const type = Object.keys(inner)[0];
+            const stream = await downloadContentFromMessage(inner[type], type.replace('Message', ''));
+
+            let buffer = Buffer.from([]);
+            for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
+
+            await sock.sendMessage(jid, {
+                [type.replace('Message', '').toLowerCase()]: buffer,
+                caption: "👁️ Captured ViewOnce"
+            });
+        }
+
+        // ===== COMMAND HANDLER =====
+        if (text.startsWith('!')) {
+            const cmd = text.slice(1).split(" ")[0];
+
+            if (commands[cmd]) {
+                return commands[cmd](jid, sock);
+            }
+
+            if (cmd === "menu") {
+                const uptime = Math.floor((Date.now() - startTime) / 1000);
+
+                return sock.sendMessage(jid, {
+                    text:
+`╭━━〔 *CYMOR BOT PREMIUM* 〕━━⬣
+┃ 📡 ${botStatus}
+┃ ⏱️ ${uptime}s
+┃ 👤 Simion Nashera
+┃
+┃ ⚙️ Commands:
+┃ ➤ !menu
+┃ ➤ !ping
+┃ ➤ !alive
+┃ ➤ !owner
+┃ ➤ !time
+┃ ➤ !backup
+┃ ➤ !session
+┃
+╰━━━━━━━━━━━━━━━━━━⬣`
+                });
+            }
+
+            if (cmd === "backup") {
+                backupSession();
+                return sock.sendMessage(jid, { text: "📦 Backup created." });
+            }
+
+            if (cmd === "session") {
+                return sock.sendMessage(jid, { text: `🧠 Active session: ${currentSession}` });
+            }
         }
     });
 }
 
-// Simple health check for Render
-app.get('/', (req, res) => res.send('Eryx Neural Interface is Active.'));
+// ===== UI =====
+const getTemplate = (title, content) => `
+<html>
+<head>
+<style>
+body { background:#0a0a0a; color:#fff; text-align:center; font-family:sans-serif;}
+.card { background:#111; padding:20px; margin:20px auto; width:320px; border-radius:12px;}
+button { padding:10px; width:90%; background:#22c55e; border:none; border-radius:8px;}
+input { padding:10px; width:85%; margin-bottom:10px;}
+</style>
+</head>
+<body>
+<h1>${title}</h1>
+${content}
+</body>
+</html>`;
 
+// ===== ROUTES =====
+
+// MULTI SESSION PANEL
+app.get('/', (req, res) => {
+    res.send(getTemplate("CYMOR PANEL", `
+    <div class="card">
+    <form action="/pair" method="POST">
+    <input name="number" placeholder="2547XXXXXXXX" required>
+    <input name="session" placeholder="session name (e.g user1)">
+    <button>PAIR DEVICE</button>
+    </form>
+    </div>
+    `));
+});
+
+// PAIR
+app.post('/pair', async (req, res) => {
+    try {
+        const sessionName = req.body.session || "default";
+        await startBot(sessionName);
+
+        const number = req.body.number.replace(/[^0-9]/g, '');
+
+        let attempts = 0;
+        while (!isReadyForPairing && attempts < 15) {
+            await delay(1000);
+            attempts++;
+        }
+
+        if (!isReadyForPairing) return res.send("❌ Not ready");
+
+        const code = await sock.requestPairingCode(number);
+
+        res.send(getTemplate("PAIR CODE", `<h1>${code}</h1>`));
+
+    } catch (e) {
+        console.log(e);
+        res.send("❌ Error");
+    }
+});
+
+// ADMIN DASHBOARD
+app.get('/admin', (req, res) => {
+    res.send(getTemplate("DASHBOARD", `
+    <div class="card">
+    <p>Status: ${botStatus}</p>
+    <p>Session: ${currentSession}</p>
+    <a href="/backup"><button>Download Backup</button></a>
+    </div>
+    `));
+});
+
+// DOWNLOAD BACKUP
+app.get('/backup', (req, res) => {
+    if (fs.existsSync('./backup.zip')) {
+        res.download('./backup.zip');
+    } else res.send("No backup");
+});
+
+// START
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    startEryx();
+    console.log("🚀 Running...");
+    startBot();
 });
