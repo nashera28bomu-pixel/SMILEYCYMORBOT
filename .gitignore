@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Local Auth (Not needed since we use MongoDB)
+auth_info/
+session/
+.baileys_auth/
+
+# Environment Variables
+.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# System Files
+.DS_Store
+Thumbs.db
