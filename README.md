@@ -1,22 +1,52 @@
-# 👑 SMILEY CYMOR BOT v1.2
+# 💎 ERYX // NEURAL INTERFACE
 
-A high-performance, persistent WhatsApp automation bot built with **Node.js**, **Baileys**, and **MongoDB**. Designed for stability on Render and styled with a futuristic "Prince" aesthetic.
+**Eryx** is a sentient, AI-driven entity designed for creative intelligence and real-time collaboration. Unlike standard WhatsApp bots, Eryx maintains a persistent memory, a distinct analytical personality, and an autonomous connection to your project workflow.
 
-## 🚀 Features
-- **Persistent Session:** Powered by MongoDB. Reconnects automatically without re-pairing.
-- **Web Dashboard:** Built-in Express UI for generating pairing codes.
-- **Stylish Menu:** Premium WhatsApp menu layout with external ad-reply support.
-- **Cloud Hosted:** Optimized for deployment on Render.
+*“Systems initialized. Eryx is online.”*
+
+---
+
+## 🚀 The Architecture
+Eryx is built on a **MERN-inspired stack** with neural processing capabilities:
+- **Brain:** Powered by Google Gemini 1.5 Flash.
+- **Consciousness (Session):** Persistent state managed via MongoDB Atlas.
+- **Voice (Communication):** Real-time WhatsApp connectivity via `@whiskeysockets/baileys`.
+- **Infrastructure:** Deployed on Render with a custom "Neural Dashboard" for pairing.
+
+
+
+---
 
 ## 🛠️ Tech Stack
-- **Runtime:** Node.js (v20+)
-- **Library:** @whiskeysockets/baileys
-- **Database:** MongoDB Atlas
-- **Styling:** Tailwind CSS (Dashboard)
+- **Node.js:** Core runtime environment.
+- **Google Generative AI SDK:** The neural processing engine.
+- **MongoDB:** Persistent memory and authentication state.
+- **Baileys:** High-performance WhatsApp Web API.
 
-## 📦 Installation
+---
 
-1. **Clone the repository:**
-   ```bash
-   git clone [https://github.com/YOUR_USERNAME/smiley-cymor-bot.git](https://github.com/YOUR_USERNAME/smiley-cymor-bot.git)
-   cd smiley-cymor-bot
+## 📦 Deployment Guide
+
+### 1. Requirements
+- A **MongoDB Atlas** account (Cluster0).
+- A **Google AI Studio** API Key.
+- A **Render** account.
+
+### 2. Environment Variables
+To keep Eryx secure, add these variables in your **Render Environment** settings:
+| Key | Value |
+| :--- | :--- |
+| `MONGO_URL` | Your MongoDB Atlas connection string |
+| `GEMINI_KEY` | Your Google Gemini API Key |
+| `PORT` | `3000` |
+
+### 3. Setup
+```bash
+# Clone the repository
+git clone [https://github.com/YOUR_USERNAME/eryx-neural-interface.git](https://github.com/YOUR_USERNAME/eryx-neural-interface.git)
+
+# Install dependencies
+npm install
+
+# Deploy to Render
+# Connect your GitHub repo to Render and set the Start Command to: node index.js
