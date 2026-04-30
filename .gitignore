@@ -1,19 +1,42 @@
-# Dependency folder (Do not upload this)
+# Node modules
 node_modules/
 
-# Local session/auth data (Your WhatsApp session keys)
-auth_info/
-session/
-baileys_auth/
-
-# Environment files (Where you hide your keys)
-.env
-.env.local
-
-# Logs and Debug files
+# Logs
+logs
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# System files
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Environment variables
+.env
+
+# Session data (VERY IMPORTANT)
+auth_info/
+sessions/
+backup.zip
+
+# OS files
 .DS_Store
 Thumbs.db
+
+# Editor folders
+.vscode/
+.idea/
+
+# Temporary files
+tmp/
+temp/
+
+# Render / deployment
+.vercel/
+.cache/
+
+# Optional: lock file (keep if you want stable builds)
+# package-lock.json
