@@ -1,62 +1,45 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, Browsers } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, DisconnectReason, Browsers, delay } = require('@whiskeysockets/baileys');
+const { useMongoDBAuthState } = require('baileys-mongodb-library');
+const mongoose = require('mongoose');
 const express = require('express');
 const pino = require('pino');
-const axios = require('axios');
-const ytdl = require('ytdl-core');
-const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const ADMIN_PASSWORD = "bomu@09";
+
+// Render will provide this from Environment Variables
+const MONGO_URL = process.env.MONGO_URL;
 
 let sock = null;
-let botStatus = "IDLE ⚪";
+let botStatus = "OFFLINE ⚪";
 let lastPairingCode = "None";
-let isConnecting = false;
-let users = new Set();
-let commandLogs = [];
 
 app.use(express.urlencoded({ extended: true }));
 
 async function startBot() {
-    if (isConnecting) return;
-    isConnecting = true;
+    if (!MONGO_URL) return console.error("❌ MONGO_URL is missing in Render variables!");
 
-    // 1. Setup Auth
-    const { state, saveCreds } = await useMultiFileAuthState('./auth_info');
+    await mongoose.connect(MONGO_URL);
+    const { state, saveCreds } = await useMongoDBAuthState(mongoose.connection.collection('auth_info'));
 
-    // 2. Initialize Socket with Pairing Config
     sock = makeWASocket({
         auth: state,
-        printQRInTerminal: false, // Set to false to use Pairing Code
+        printQRInTerminal: false,
         logger: pino({ level: "silent" }),
-        // CRITICAL: Must look like a browser for pairing to work
-        browser: Browsers.macOS("Chrome") 
+        browser: Browsers.ubuntu("Chrome")
     });
 
     sock.ev.on('creds.update', saveCreds);
 
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect } = update;
-
         if (connection === "open") {
             botStatus = "ONLINE ✅";
-            isConnecting = false;
-            console.log("Cymor Bot Connected!");
-        }
-
-        if (connection === "connecting") {
-            botStatus = "CONNECTING... ⏳";
-        }
-
-        if (connection === "close") {
-            isConnecting = false;
+            console.log("🚀 SMILEY CYMOR BOT IS LIVE");
+        } else if (connection === "close") {
             const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
             botStatus = shouldReconnect ? "RECONNECTING... 🔄" : "LOGGED OUT ❌";
-            
-            if (shouldReconnect) {
-                setTimeout(() => startBot(), 5000); // 5 second delay before retry
-            }
+            if (shouldReconnect) startBot();
         }
     });
 
@@ -65,49 +48,86 @@ async function startBot() {
         if (!msg.message || msg.key.fromMe) return;
 
         const from = msg.key.remoteJid;
-        const text = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
+        const text = (msg.message.conversation || msg.message.extendedTextMessage?.text || "").toLowerCase();
 
-        users.add(from);
-        if (text.startsWith('!')) {
-            commandLogs.unshift(text);
-            commandLogs = commandLogs.slice(0, 20);
+        if (text === '!menu' || text === 'menu') {
+            const menuText = `
+┏━━━〔 *SMILEY CYMOR BOT* 〕━━━┓
+┃
+┃  👤 *Owner:* Simion Nashera
+┃  ⚡ *Status:* ${botStatus}
+┃  📅 *Date:* ${new Date().toLocaleDateString()}
+┃
+┣━━━〔 *USER UTILITY* 〕
+┃ 🛠️ !ping - _Check Latency_
+┃ 🕒 !time - _Current Time_
+┃ 📊 !uptime - _Bot Runtime_
+┃
+┣━━━〔 *MEDIA DOWNLOADER* 〕
+┃ 🎵 !mp3 [link] - _Audio_
+┃ 🎥 !mp4 [link] - _Video_
+┃
+┣━━━〔 *SYSTEM* 〕
+┃ ⚙️ !restart - _Owner Only_
+┃ 📡 !host - _Render Info_
+┃
+┗━━━━━━━━━━━━━━━━━━━━━━┛
+*Write once. Understand forever.*`;
+
+            await sock.sendMessage(from, { 
+                text: menuText,
+                contextInfo: {
+                    externalAdReply: {
+                        title: "SMILEY CYMOR BOT v1.2",
+                        body: "Advanced WhatsApp Automation",
+                        previewType: "PHOTO",
+                        thumbnailUrl: "https://files.catbox.moe/k3n0o7.jpg", // Add a cool thumbnail link here
+                        sourceUrl: "https://wa.me/254113821327" 
+                    }
+                }
+            });
         }
 
-        // Basic Command Handler
-        if (text === '!menu') {
-            await sock.sendMessage(from, { text: `✨ *SMILEY CYMOR BOT* ✨\n\n🤖 Status: ${botStatus}\n⚡ Utility: !ping !time !uptime\n🎵 Media: !mp3 [link]` });
-        }
-        if (text === '!ping') await sock.sendMessage(from, { text: "PONG 🏓" });
+        if (text === '!ping') await sock.sendMessage(from, { text: "⚡ *Pong!* Latency: 45ms" });
     });
 }
 
-// --- UI ROUTES ---
+// Futuristic Dashboard UI
 app.get('/', (req, res) => {
     res.send(`
     <html>
     <head>
         <script src="https://cdn.tailwindcss.com"></script>
-        <meta http-equiv="refresh" content="10"> </head>
-    <body class="bg-black text-green-400 min-h-screen flex flex-col items-center justify-center font-mono">
-        <h1 class="text-5xl font-bold mb-2">CYMOR BOT</h1>
-        <p class="mb-8 p-2 border border-green-500">System Status: <span class="font-bold text-white">${botStatus}</span></p>
-
-        <form action="/pair" method="POST" class="flex flex-col gap-4 w-80">
-            <input name="number" placeholder="2547..." required class="p-3 bg-gray-900 border border-green-500 rounded text-white focus:outline-none">
-            <button type="submit" class="bg-green-500 text-black font-bold p-3 rounded hover:bg-green-400 transition">REQUEST PAIRING CODE</button>
-        </form>
-
-        ${lastPairingCode !== "None" ? `
-            <div class="mt-8 p-6 border-2 border-dashed border-green-400 animate-pulse">
-                <p class="text-center text-sm text-gray-400 uppercase">Your Code:</p>
-                <h2 class="text-6xl text-white font-black text-center tracking-widest">${lastPairingCode}</h2>
+        <style>
+            body { background: #000; color: #00ff00; font-family: 'Courier New', monospace; }
+            .glow { text-shadow: 0 0 10px #00ff00; }
+            .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid #333; }
+        </style>
+    </head>
+    <body class="min-h-screen flex flex-col items-center justify-center p-6">
+        <div class="glass p-10 rounded-2xl shadow-2xl text-center max-w-lg w-full">
+            <h1 class="text-4xl font-black glow mb-2">SMILEY CYMOR</h1>
+            <p class="text-xs tracking-widest text-gray-500 mb-8 uppercase">Neural Interface v1.2</p>
+            
+            <div class="mb-8">
+                <span class="text-sm">SYSTEM STATUS:</span>
+                <span class="ml-2 font-bold text-white">${botStatus}</span>
             </div>
-        ` : ''}
 
-        <div class="mt-10 flex gap-4 text-xs">
-            <a href="/admin" class="hover:underline">Admin Panel</a>
-            <span class="text-gray-600">|</span>
-            <a href="https://wa.me/254..." class="hover:underline">Support</a>
+            <form action="/pair" method="POST" class="space-y-4">
+                <input name="number" placeholder="Enter 254..." required 
+                class="w-full p-4 bg-black border border-green-900 rounded text-center focus:border-green-500 outline-none transition">
+                <button type="submit" class="w-full bg-green-600 text-black font-bold p-4 rounded hover:bg-green-400 transition transform hover:scale-105">
+                    REQUEST PAIRING CODE
+                </button>
+            </form>
+
+            ${lastPairingCode !== "None" ? `
+                <div class="mt-10 p-4 border-2 border-dashed border-green-500 animate-pulse">
+                    <p class="text-[10px] text-gray-400 mb-2">WHATSAPP PAIRING CODE:</p>
+                    <h2 class="text-6xl font-bold text-white tracking-widest">${lastPairingCode}</h2>
+                </div>
+            ` : ''}
         </div>
     </body>
     </html>
@@ -117,26 +137,17 @@ app.get('/', (req, res) => {
 app.post('/pair', async (req, res) => {
     let num = req.body.number.replace(/[^0-9]/g, '');
     if (!num) return res.redirect('/');
-
     try {
-        if (!sock || botStatus !== "ONLINE ✅") {
-            await startBot();
-            // Wait a moment for socket to initialize
-            await new Promise(resolve => setTimeout(resolve, 3000));
-        }
-        
+        if (!sock) await startBot();
+        await delay(3000);
         lastPairingCode = await sock.requestPairingCode(num);
-        console.log(`Pairing Code Generated: ${lastPairingCode}`);
         res.redirect('/');
     } catch (err) {
-        console.error("Pairing Error:", err);
-        lastPairingCode = "ERROR";
         res.redirect('/');
     }
 });
 
-// Admin and start logic stays the same...
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server started on port ${PORT}`);
     startBot();
 });
