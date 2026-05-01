@@ -1,0 +1,180 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cymor Shoe Store</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Poppins',sans-serif;background:#0f172a;color:white}
+header{background:#020617;padding:15px;display:flex;justify-content:space-between;align-items:center}
+nav a{color:white;margin:0 10px;text-decoration:none;font-weight:600}
+nav a:hover{color:#22c55e}
+.hero{height:90vh;background:url('https://images.unsplash.com/photo-1542291026-7eec264c27ff') center/cover;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.hero h1{font-size:3rem}
+.section{padding:40px}
+.products{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px}
+.card{background:#1e293b;padding:15px;border-radius:15px;transition:0.3s}
+.card:hover{transform:scale(1.05)}
+.card img{width:100%;border-radius:10px}
+button{padding:10px;border:none;background:#22c55e;color:white;border-radius:10px;cursor:pointer}
+button:hover{opacity:0.8}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:#000000aa;display:none;justify-content:center;align-items:center}
+.modal-content{background:#1e293b;padding:20px;border-radius:15px;width:90%;max-width:400px}
+input,textarea{width:100%;padding:10px;margin:5px 0;border-radius:8px;border:none}
+footer{text-align:center;padding:20px;background:#020617}
+</style>
+</head>
+<body><header>
+<h2>Cymor Shoe Store</h2>
+<nav>
+<a href="#home">Home</a>
+<a href="#products">Our Products</a>
+<a href="#orders">My Orders</a>
+<a href="#contact">Contact</a>
+</nav>
+</header><section class="hero" id="home">
+<h1>Always A Winner 👟</h1>
+<p>Premium Street & Official Shoes in Mombasa</p>
+<p id="countdown"></p>
+</section><section class="section" id="products">
+<h2>Our Products</h2>
+<div class="products" id="productList"></div>
+</section><section class="section" id="orders">
+<h2>My Orders</h2>
+<ul id="orderList"></ul>
+</section><section class="section" id="contact">
+<h2>Contact Us</h2>
+<p>Phone: 0113821327</p>
+<p>Email: simionnashy09@gmail.com</p>
+<p>Facebook: cymorshoes</p>
+<p>Instagram: mr.smiley_cymor</p>
+<textarea id="msg" placeholder="Write your message..."></textarea>
+<button onclick="sendMsg()">Send Message</button>
+</section><footer>
+<p>© CymorTechServices 2026 | Always A Winner</p>
+</footer><!-- ORDER MODAL --><div class="modal" id="orderModal">
+<div class="modal-content">
+<h3>Order Details</h3>
+<input id="name" placeholder="Name">
+<input id="email" placeholder="Email">
+<input id="phone" placeholder="Phone">
+<input id="location" placeholder="Delivery Location">
+<button onclick="submitOrder()">Submit</button>
+</div>
+</div><script>
+const API_URL = "http://localhost:5000/api"; // change after deploy
+let selectedProduct;
+
+// Countdown
+let target=new Date('Nov 29, 2026 00:00:00').getTime();
+setInterval(()=>{
+let now=new Date().getTime();
+let diff=target-now;
+document.getElementById('countdown').innerText="Black Friday in "+Math.floor(diff/(1000*60*60*24))+" days";
+},1000);
+
+// Realistic Products
+let products = [
+{ id:1,name:"Nike Air Max 270",price:6500,img:"https://images.unsplash.com/photo-1542291026-7eec264c27ff",sizes:"38-45",colors:"Black, White"},
+{ id:2,name:"Adidas Ultraboost",price:7200,img:"https://images.unsplash.com/photo-1519741497674-611481863552",sizes:"39-46",colors:"White, Grey"},
+{ id:3,name:"Jordan 1 Retro",price:8500,img:"https://images.unsplash.com/photo-1600180758890-6b94519a8ba6",sizes:"40-45",colors:"Red, Black"},
+{ id:4,name:"Puma RS-X",price:5800,img:"https://images.unsplash.com/photo-1528701800489-20be3c2ea8c7",sizes:"38-44",colors:"Blue, White"},
+{ id:5,name:"Converse All Star",price:3500,img:"https://images.unsplash.com/photo-1513105737059-ff0cf0580f7b",sizes:"37-44",colors:"Black, White"},
+{ id:6,name:"Vans Old Skool",price:4200,img:"https://images.unsplash.com/photo-1549298916-b41d501d3772",sizes:"38-44",colors:"Black"},
+{ id:7,name:"New Balance 574",price:6000,img:"https://images.unsplash.com/photo-1606813907291-d86efa9b94db",sizes:"39-45",colors:"Grey"},
+{ id:8,name:"Reebok Classic",price:4800,img:"https://images.unsplash.com/photo-1584735175315-9d5df23be620",sizes:"38-44",colors:"White"},
+{ id:9,name:"Nike Air Force 1",price:7000,img:"https://images.unsplash.com/photo-1606813907291-d86efa9b94db",sizes:"39-45",colors:"White"},
+{ id:10,name:"Adidas NMD",price:6800,img:"https://images.unsplash.com/photo-1549298916-b41d501d3772",sizes:"39-46",colors:"Black"}
+];
+
+let productList=document.getElementById('productList');
+products.forEach(p=>{
+productList.innerHTML+=`<div class='card'>
+<img src='${p.img}'>
+<h3>${p.name}</h3>
+<p>Ksh ${p.price}</p>
+<p>Sizes: ${p.sizes}</p>
+<p>Colors: ${p.colors}</p>
+<button onclick='openOrder(${p.id})'>Order Now</button>
+</div>`;
+});
+
+function openOrder(id){
+selectedProduct=products.find(p=>p.id===id);
+document.getElementById('orderModal').style.display='flex';
+}
+
+// Submit Order (Backend Connected)
+async function submitOrder(){
+let name=document.getElementById('name').value;
+let email=document.getElementById('email').value;
+let phone=document.getElementById('phone').value;
+let location=document.getElementById('location').value;
+
+if(!name || !phone || !location){
+alert("Please fill all required fields");
+return;
+}
+
+let shipping=300;
+let total=selectedProduct.price+shipping;
+
+await fetch(`${API_URL}/order`,{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+product:selectedProduct.name,
+price:selectedProduct.price,
+shipping,
+total,
+name,
+email,
+phone,
+location
+})
+});
+
+alert(`Pay Ksh ${total} to Mpesa 0113821327`);
+alert("Thank you! Your order has been received successfully.");
+
+// Update UI
+let orderItem = `#${Date.now()} - ${selectedProduct.name} - Ksh ${total} - Delivery: 2-3 days`;
+document.getElementById('orderList').innerHTML += `<li>${orderItem}</li>`;
+
+// WhatsApp Notification
+window.open(`https://wa.me/254113821327?text=NEW ORDER:%0AProduct:${selectedProduct.name}%0AName:${name}%0APhone:${phone}%0ALocation:${location}%0ATotal:${total}`);
+
+document.getElementById('orderModal').style.display='none';
+}
+
+// Load Orders from Backend
+async function loadOrders(){
+try{
+let res = await fetch(`${API_URL}/orders`);
+let data = await res.json();
+
+data.forEach(o=>{
+document.getElementById('orderList').innerHTML +=
+`<li>#${o._id} - ${o.product} - Ksh ${o.total} - Delivery: 2-3 days</li>`;
+});
+}catch(err){console.log("Backend not reachable yet");}
+}
+loadOrders();
+
+function sendMsg(){
+let m=document.getElementById('msg').value;
+window.open(`https://wa.me/254113821327?text=${m}`);
+}
+
+function inquire(product){
+window.open(`https://wa.me/254113821327?text=Inquiry about ${product}`);
+}
+
+// Close modal on outside click
+window.onclick = function(e){
+let modal = document.getElementById('orderModal');
+if(e.target === modal){ modal.style.display = "none"; }
+}
+
+</script></body>
+</html>
