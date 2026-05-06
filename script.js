@@ -32,16 +32,19 @@ async function sendMessage() {
     chatBox.scrollTop = chatBox.scrollHeight;
 
     try {
-        const response = await fetch("/chat", {
+        // Updated: Explicitly pointing to your Railway backend
+        const response = await fetch("https://smileycymorbot-production.up.railway.app/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message: userText })
         });
 
+        if (!response.ok) throw new Error("Server error");
+
         const data = await response.json();
 
         // Remove thinking message
-        document.getElementById(typingId).remove();
+        document.getElementById(typingId)?.remove();
 
         // Add Bot Container
         const botId = "msg-" + Date.now();
@@ -57,7 +60,7 @@ async function sendMessage() {
                 botElement.textContent += replyText.charAt(index);
                 index++;
                 chatBox.scrollTop = chatBox.scrollHeight;
-                setTimeout(typeEffect, 12); // Speed: slightly faster for elite responsiveness
+                setTimeout(typeEffect, 12); 
             }
         }
         typeEffect();
