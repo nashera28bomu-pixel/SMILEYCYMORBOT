@@ -1,62 +1,99 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const path = require("path");
 require("dotenv").config();
+const express = require("express");
+const axios = require("axios");
 
 const app = express();
-
-// Middleware
-app.use(cors());
 app.use(express.json());
+app.use(express.static(".")); // serve frontend
 
-// Serve frontend
-app.use(express.static(path.join(__dirname, "../public")));
+// Simple in-memory chat history (per session idea)
+let conversationHistory = [];
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGO_URI)
-.then(()=>console.log("MongoDB Connected"))
-.catch(err=>console.log(err));
+// 🔥 CymorAI Personality
+const SYSTEM_PROMPT = `
+You are CymorAI, an intelligent, friendly, and slightly futuristic AI assistant.
+- Be clear, helpful, and engaging
+- Keep answers concise but powerful
+- Sound confident and smart
+- Occasionally feel human-like
+`;
 
-// Import Model
-const Order = require("./models/Order");
-
-// Create Order
-app.post("/api/order", async (req, res) => {
+// 🧠 Chat Endpoint
+app.post("/chat", async (req, res) => {
     try {
-        const order = new Order(req.body);
-        await order.save();
-        res.json({ message: "Order saved successfully" });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+        const userMessage = req.body.message;
+
+        // 🚨 Validation
+        if (!userMessage || userMessage.length > 1000) {
+            return res.status(400).json({
+                reply: "Invalid message."
+            });
+        }
+
+        // Add user message to memory
+        conversationHistory.push({ role: "user", content: userMessage });
+
+        // Limit memory (last 10 messages)
+        if (conversationHistory.length > 10) {
+            conversationHistory.shift();
+        }
+
+        // Build messages array
+        const messages = [
+            { role: "system", content: SYSTEM_PROMPT },
+            ...conversationHistory
+        ];
+
+        const response = await axios.post(
+            "https://api.openai.com/v1/chat/completions",
+            {
+                model: "gpt-4.1-mini",
+                messages: messages,
+                temperature: 0.7, // creativity
+                max_tokens: 500
+            },
+            {
+                headers: {
+                    "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+                    "Content-Type": "application/json"
+                },
+                timeout: 10000
+            }
+        );
+
+        let reply = response.data.choices[0].message.content;
+
+        // Save AI reply in memory
+        conversationHistory.push({ role: "assistant", content: reply });
+
+        // Add Cymor branding
+        reply += "\n\n— Powered by Cymor";
+
+        res.json({ reply });
+
+    } catch (error) {
+        console.error("🔥 ERROR:", error.message);
+
+        // Smart error responses
+        let message = "CymorAI is having trouble responding. Try again.";
+
+        if (error.response?.status === 401) {
+            message = "API key error. Check configuration.";
+        } else if (error.code === "ECONNABORTED") {
+            message = "Request timed out. Please retry.";
+        }
+
+        res.status(500).json({ reply: message });
     }
 });
 
-// Get Orders
-app.get("/api/orders", async (req, res) => {
-    try {
-        const orders = await Order.find().sort({ createdAt: -1 });
-        res.json(orders);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+// 🚀 Health check route (pro feature)
+app.get("/health", (req, res) => {
+    res.json({ status: "OK", service: "CymorAI" });
 });
 
-// Stats
-app.get("/api/stats", async (req, res) => {
-    try {
-        const orders = await Order.find();
-        const total = orders.reduce((sum, o) => sum + o.total, 0);
-
-        res.json({
-            totalOrders: orders.length,
-            totalEarnings: total
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+// 🚀 Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`🚀 CymorAI running on http://localhost:${PORT}`);
 });
-
-// Start Server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
