@@ -4,7 +4,15 @@ const cors = require("cors");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
-app.use(cors());
+
+// --- CRITICAL CORS CONFIGURATION ---
+// This allows your frontend (hosted anywhere) to send requests to your backend
+app.use(cors({ 
+    origin: "*", 
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"] 
+}));
+
 app.use(express.json());
 app.use(express.static("."));
 
