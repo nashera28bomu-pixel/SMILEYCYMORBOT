@@ -6,7 +6,6 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const app = express();
 
 // --- CRITICAL CORS CONFIGURATION ---
-// This allows your frontend (hosted anywhere) to send requests to your backend
 app.use(cors({ 
     origin: "*", 
     methods: ["GET", "POST"],
@@ -40,12 +39,10 @@ app.post("/chat", async (req, res) => {
             return res.status(400).json({ reply: "Invalid message." });
         }
 
-        // Send message to Gemini
         const result = await chat.sendMessage(userMessage);
         const response = await result.response;
         let reply = response.text();
 
-        // Add Cymor branding
         reply += "\n\n— Powered by Cymor";
 
         res.json({ reply });
@@ -56,11 +53,12 @@ app.post("/chat", async (req, res) => {
     }
 });
 
-app.get("/health", (req, res) => {
-    res.json({ status: "OK", service: "CymorAI" });
+// Updated Healthcheck for Railway
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
 });
 
-// Updated port configuration for Railway compatibility
+// Port configuration for Railway compatibility
 const port = process.env.PORT || 8080;
 
 app.listen(port, '0.0.0.0', () => {
