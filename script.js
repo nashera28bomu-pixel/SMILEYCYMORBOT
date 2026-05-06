@@ -1,3 +1,11 @@
+// Set prompt when shortcut is clicked
+function setPrompt(text) { 
+    const input = document.getElementById("userInput");
+    input.value = text;
+    input.focus();
+}
+
+// Handle Enter key for submission
 function handleKey(e) {
     if (e.key === "Enter") sendMessage();
 }
@@ -5,67 +13,61 @@ function handleKey(e) {
 async function sendMessage() {
     const input = document.getElementById("userInput");
     const chatBox = document.getElementById("chatBox");
-
     const userText = input.value.trim();
+    
     if (!userText) return;
 
-    // Add user message
-    chatBox.innerHTML += `<div class="user">You: ${userText}</div>`;
+    // Add User Message
+    chatBox.insertAdjacentHTML('beforeend', `<div class="message user">${userText}</div>`);
     input.value = "";
+    chatBox.scrollTop = chatBox.scrollHeight;
 
-    // Create AI thinking message
+    // Show Thinking Animation
     const typingId = "typing-" + Date.now();
-    chatBox.innerHTML += `
-        <div class="bot" id="${typingId}">
-            CymorAI is thinking 
-            <span class="brain">🧠</span>
-            <span class="typing">
-                <span></span><span></span><span></span>
-            </span>
+    chatBox.insertAdjacentHTML('beforeend', `
+        <div class="message bot" id="${typingId}">
+            <em>CymorAI is thinking...</em>
         </div>
-    `;
-
+    `);
     chatBox.scrollTop = chatBox.scrollHeight;
 
     try {
         const response = await fetch("/chat", {
             method: "POST",
-            headers: {"Content-Type": "application/json"},
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message: userText })
         });
 
         const data = await response.json();
 
-        // Remove thinking animation
+        // Remove thinking message
         document.getElementById(typingId).remove();
 
-        // Create empty bot message for streaming
-        const botId = "bot-" + Date.now();
-        chatBox.innerHTML += `<div class="bot" id="${botId}"></div>`;
-
+        // Add Bot Container
+        const botId = "msg-" + Date.now();
+        chatBox.insertAdjacentHTML('beforeend', `<div class="message bot" id="${botId}"></div>`);
+        
         const botElement = document.getElementById(botId);
-
-        // ✍️ Typing/streaming effect
-        let text = "CymorAI: " + data.reply;
+        const replyText = data.reply;
         let index = 0;
 
+        // Elite Streaming Effect
         function typeEffect() {
-            if (index < text.length) {
-                botElement.innerHTML += text.charAt(index);
+            if (index < replyText.length) {
+                botElement.textContent += replyText.charAt(index);
                 index++;
                 chatBox.scrollTop = chatBox.scrollHeight;
-                setTimeout(typeEffect, 15); // speed (lower = faster)
+                setTimeout(typeEffect, 12); // Speed: slightly faster for elite responsiveness
             }
         }
-
         typeEffect();
 
     } catch (error) {
         document.getElementById(typingId)?.remove();
-        chatBox.innerHTML += `
-            <div class="bot">
-                ⚠️ CymorAI encountered an error. Try again.
+        chatBox.insertAdjacentHTML('beforeend', `
+            <div class="message bot" style="color: #ef4444;">
+                ⚠️ Connection error. Please check your network.
             </div>
-        `;
+        `);
     }
 }
