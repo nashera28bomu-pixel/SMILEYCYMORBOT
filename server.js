@@ -60,7 +60,9 @@ app.get("/health", (req, res) => {
     res.json({ status: "OK", service: "CymorAI" });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 CymorAI running on port ${PORT}`);
+// Updated port configuration for Railway compatibility
+const port = process.env.PORT || 8080;
+
+app.listen(port, '0.0.0.0', () => {
+    console.log(`🚀 CymorAI running on port ${port}`);
 });
