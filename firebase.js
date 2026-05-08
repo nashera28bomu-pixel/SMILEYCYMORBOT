@@ -2,18 +2,19 @@
 // CYMOR AI - FIREBASE CORE CONNECTION
 // =============================================
 
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+// Using CDN imports for browser compatibility
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // =============================================
-// FIREBASE CONFIG
+// FIREBASE CONFIG (UPDATED STORAGE BUCKET)
 // =============================================
 const firebaseConfig = {
   apiKey: "AIzaSyC48m4Mmksa8Fpx6OGDU8tAUIlCCqOE8Js",
   authDomain: "cymorai.firebaseapp.com",
   projectId: "cymorai",
-  storageBucket: "cymorai.appspot.com",
+  storageBucket: "cymorai.firebasestorage.app", // Fixed matching the new details
   messagingSenderId: "718791176464",
   appId: "1:718791176464:web:159e5233fe709c518c3595"
 };
