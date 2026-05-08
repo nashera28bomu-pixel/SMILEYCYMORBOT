@@ -9,13 +9,19 @@ const PORT = process.env.PORT || 3000;
 // --- MIDDLEWARE ---
 app.use(cors()); 
 app.use(express.json());
-// Ensure your index.html, style.css, and script.js are in the same directory
 app.use(express.static(".")); 
 
 // --- AI INITIALIZATION ---
+// Ensure the API Key is present before initializing
+if (!process.env.GEMINI_API_KEY) {
+    console.error("❌ CRITICAL: GEMINI_API_KEY is missing in .env file");
+}
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// Fix: Use the full model path 'models/gemini-1.5-flash' to avoid 404 errors
 const model = genAI.getGenerativeModel({ 
-    model: "gemini-1.5-flash",
+    model: "gemini-1.5-flash", 
     systemInstruction: `You are CymorAI, an intelligent, friendly, and slightly futuristic AI assistant.
 - Be clear, helpful, and engaging.
 - Keep answers concise but powerful.
@@ -25,30 +31,31 @@ const model = genAI.getGenerativeModel({
 
 // --- ROUTES ---
 app.post("/chat", async (req, res) => {
-    const userMessage = req.body.message;
-    const userHistory = req.body.history || [];
+    const { message, history = [] } = req.body;
     
-    console.log(`📩 Incoming: "${userMessage}"`);
+    console.log(`📩 Incoming: "${message}"`);
 
     try {
         if (!process.env.GEMINI_API_KEY) {
-            console.error("❌ MISSING API KEY in Environment Variables");
             return res.status(500).json({ reply: "Configuration error: API Key missing." });
         }
 
-        if (!userMessage || userMessage.trim().length === 0) {
+        if (!message || message.trim().length === 0) {
             return res.status(400).json({ reply: "Message cannot be empty." });
         }
 
-        const chat = model.startChat({ history: userHistory });
+        // Initialize chat with history
+        const chat = model.startChat({ 
+            history: history,
+            generationConfig: {
+                maxOutputTokens: 1000,
+            },
+        });
 
-        // Increased timeout to 60s to handle Render's free tier wake-up time
-        const resultPromise = chat.sendMessage(userMessage);
-        const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Request Timeout")), 60000)
-        );
-
-        const result = await Promise.race([resultPromise, timeoutPromise]);
+        // Use a standard async call. The SDK handles most internal timeouts.
+        // On Render free tier, the 50s spin-up delay is handled by the browser request, 
+        // not the internal JS code.
+        const result = await chat.sendMessage(message);
         const response = await result.response;
         const text = response.text();
 
@@ -63,10 +70,13 @@ app.post("/chat", async (req, res) => {
         
         let errorMessage = "CymorAI is having trouble connecting. Try again.";
         
-        if (error.message.includes("API_KEY_INVALID")) {
+        // Specific error handling for common API issues
+        if (error.message.includes("404") || error.message.includes("not found")) {
+            errorMessage = "Model version mismatch. Please contact admin.";
+        } else if (error.message.includes("API_KEY_INVALID")) {
             errorMessage = "System Error: Invalid API Key.";
-        } else if (error.message === "Request Timeout") {
-            errorMessage = "The AI is taking too long to wake up. Please try one more time.";
+        } else if (error.message.includes("safety")) {
+            errorMessage = "I cannot answer that due to safety guidelines.";
         }
 
         res.status(500).json({ reply: errorMessage });
