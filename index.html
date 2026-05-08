@@ -64,7 +64,7 @@
             transition: 0.3s;
         }
 
-        /* Added Suggestion Chips Style */
+        /* Suggestion Chips Style */
         .suggestion-chips {
             display: flex;
             gap: 10px;
@@ -100,6 +100,20 @@
             font-weight: bold;
             border: 1px solid #ff0033;
         }
+
+        /* Layout Fix: Ensure app occupies full viewport */
+        #app {
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
     </style>
 </head>
 
@@ -122,12 +136,13 @@
 
 <div class="main-container" id="app" style="display:none;">
     <section class="chat-panel">
-        <div class="chat-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="chat-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid rgba(255, 0, 51, 0.1);">
             <div>
                 <div class="chat-title" style="font-family:'Orbitron'; font-weight: bold; color: #00ffaa;">CYMOR AI</div>
                 <div class="chat-subtitle" style="font-size: 10px; opacity: 0.6;">Neural Intelligence Interface</div>
             </div>
             <div class="live-badge">LIVE</div>
+            <span id="userName" style="display:none;"></span>
         </div>
 
         <div class="suggestion-chips">
@@ -137,11 +152,10 @@
             <button class="chip" onclick="window.setPrompt('🧠 AI')">🧠 AI</button>
         </div>
 
-        <div class="chat-box" id="chatBox">
-            </div>
+        <div class="chat-box" id="chatBox"></div>
 
         <div class="input-section">
-            <input type="text" id="userInput" placeholder="Ask Cymor Ai..." onkeydown="window.handleKey(event)">
+            <input type="text" id="userInput" placeholder="Transmit your message..." onkeydown="window.handleKey(event)">
             <button onclick="window.sendMessage()" id="sendBtn">➤</button>
         </div>
     </section>
