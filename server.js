@@ -11,7 +11,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(".")); 
 
-// --- AI INITIALIZATION ---
 if (!process.env.GEMINI_API_KEY) {
     console.error("❌ CRITICAL: GEMINI_API_KEY is missing in Environment Variables");
 }
@@ -19,12 +18,12 @@ if (!process.env.GEMINI_API_KEY) {
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
- * FIX: Updated model string to "gemini-1.5-flash-latest".
- * This helps avoid the 404 error seen in your Render logs by 
- * pointing to the most stable production endpoint.
+ * FIX: Using "gemini-1.5-flash" (Stable) 
+ * This avoids the 404 errors associated with the "-latest" alias 
+ * while maintaining broad regional compatibility.
  */
 const model = genAI.getGenerativeModel({ 
-    model: "gemini-1.5-flash-latest", 
+    model: "gemini-1.5-flash", 
     systemInstruction: `You are CymorAI, an intelligent, friendly, and slightly futuristic AI assistant.
 - Be clear, helpful, and engaging.
 - Keep answers concise but powerful.
@@ -56,15 +55,16 @@ app.post("/chat", async (req, res) => {
             },
         });
 
-        // Sending the message
+        // Sending the message to Gemini
         const result = await chat.sendMessage(message);
         const response = await result.response;
         const text = response.text();
 
         console.log("✅ AI Response generated successfully");
         
+        // Appending the requested signature to every reply
         res.json({ 
-            reply: `${text}\n\n— Powered by Cymor`
+            reply: `${text}\n\n— Powered by CymorAi`
         });
 
     } catch (error) {
@@ -72,14 +72,13 @@ app.post("/chat", async (req, res) => {
         
         let errorMessage = "CymorAI is having trouble connecting. Try again.";
         
-        // Handling the 404/Mismatch error explicitly
+        // Specific error handling for the 404/Regional issues seen in logs
         if (error.message.includes("404") || error.message.includes("not found")) {
-            errorMessage = "CymorAI version mismatch. Try refreshing the page.";
-            console.log("Tip: Ensure your API key has access to the Flash model in your region.");
+            errorMessage = "Model version mismatch. System updating...";
+        } else if (error.message.includes("location") || error.message.includes("supported")) {
+            errorMessage = "CymorAI is currently restricted in this server's region.";
         } else if (error.message.includes("API_KEY_INVALID")) {
             errorMessage = "System Error: Invalid API Key.";
-        } else if (error.message.includes("safety")) {
-            errorMessage = "I cannot answer that due to safety guidelines.";
         }
 
         res.status(500).json({ reply: errorMessage });
