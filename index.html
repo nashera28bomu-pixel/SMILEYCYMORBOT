@@ -1,99 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYMOR AI | Intelligent Nexus</title>
 
-<title>CYMOR AI | Intelligent Nexus</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="style.css">
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ===== LOGIN OVERLAY ===== */
+        .login-screen {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at top, #1a0000, #000000);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
 
-<style>
-/* ===== LOGIN OVERLAY ===== */
-.login-screen {
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(circle at top, #1a0000, #000000);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-}
+        /* Glass card styling */
+        .login-box {
+            width: 360px;
+            padding: 30px;
+            border-radius: 18px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 0, 51, 0.3);
+            box-shadow: 0 0 25px rgba(255, 0, 51, 0.3);
+            backdrop-filter: blur(12px);
+            text-align: center;
+        }
 
-/* Glass card */
-.login-box {
-    width: 360px;
-    padding: 30px;
-    border-radius: 18px;
-    background: rgba(0,0,0,0.6);
-    border: 1px solid rgba(255,0,0,0.3);
-    box-shadow: 0 0 25px rgba(255,0,0,0.3);
-    backdrop-filter: blur(12px);
-    text-align: center;
-}
+        .login-box h1 {
+            font-family: 'Orbitron', sans-serif;
+            color: #ff0033;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px red;
+        }
 
-.login-box h1 {
-    font-family: 'Orbitron', sans-serif;
-    color: #ff0033;
-    letter-spacing: 2px;
-    margin-bottom: 10px;
-    text-shadow: 0 0 15px red;
-}
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: black;
+            border: 1px solid #ff0033;
+            border-radius: 8px;
+            color: white;
+            outline: none;
+            box-sizing: border-box; /* Ensures padding doesn't break width */
+        }
 
-.login-box input {
-    width: 100%;
-    padding: 12px;
-    margin: 10px 0;
-    background: black;
-    border: 1px solid #ff0033;
-    border-radius: 8px;
-    color: white;
-    outline: none;
-}
+        .login-box button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            background: linear-gradient(45deg, #ff0033, #660000);
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.4);
+            transition: transform 0.2s ease;
+        }
 
-.login-box button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    background: linear-gradient(45deg, #ff0033, #660000);
-    border: none;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-    border-radius: 8px;
-    box-shadow: 0 0 15px red;
-}
+        .login-box button:hover {
+            transform: scale(1.03);
+            background: linear-gradient(45deg, #ff1a4a, #800000);
+        }
 
-.login-box button:hover {
-    transform: scale(1.05);
-}
+        .google-btn {
+            background: black !important;
+            border: 1px solid #ff0033 !important;
+            margin-top: 15px !important;
+        }
 
-.google-btn {
-    background: black !important;
-    border: 1px solid red;
-    box-shadow: 0 0 10px red;
-}
-
-.main-container {
-    display: none;
-}
-</style>
-
+        /* Hidden by default until login */
+        .main-container {
+            display: none; 
+        }
+    </style>
 </head>
 
 <body>
 
-<!-- 🔥 LOGIN SCREEN -->
 <div class="login-screen" id="loginScreen">
-
     <div class="login-box">
-
         <h1>CYMOR AI</h1>
-        <p style="color:#aaa; font-size:13px;">Neural Access Terminal</p>
+        <p style="color:#aaa; font-size:13px; margin-bottom: 20px;">Neural Access Terminal</p>
 
-        <input type="text" id="name" placeholder="Enter Name">
-        <input type="email" id="email" placeholder="Email">
+        <input type="text" id="name" placeholder="Full Name (For Signup)">
+        <input type="email" id="email" placeholder="Email Address">
         <input type="password" id="password" placeholder="Password">
 
         <button onclick="signup()">Create Account</button>
@@ -102,98 +101,97 @@
         <button class="google-btn" onclick="googleLogin()">
             Continue with Google
         </button>
-
     </div>
-
 </div>
 
-<!-- MAIN APP -->
 <div class="main-container" id="app">
-
     <section class="hero-panel">
         <div class="hero-content">
             <h1>CYMOR <span>AI</span></h1>
             <h2>INTELLIGENT NEXUS</h2>
-
             <p class="hero-description">
-                Welcome, <span id="userName">User</span>. CymorAI is ready.
+                Welcome, <span id="userName" style="color: #ff0033; font-weight: bold;">User</span>. CymorAI is ready.
             </p>
         </div>
     </section>
 
     <section class="chat-panel">
-
         <div class="chat-header">
             <div>
                 <div class="chat-title">CYMOR AI</div>
                 <div class="chat-subtitle">Neural Intelligence Interface</div>
             </div>
-
             <div class="live-badge">LIVE</div>
         </div>
 
         <div class="chat-box" id="chatBox">
-            <div class="message bot">
-                ⚡ Welcome to CymorAI Neural System.
             </div>
-        </div>
 
         <div class="input-section">
-            <input type="text" id="userInput" placeholder="Transmit your message...">
+            <input type="text" id="userInput" placeholder="Transmit your message..." onkeypress="handleKey(event)">
             <button onclick="sendMessage()">➤</button>
         </div>
-
     </section>
-
 </div>
 
-<!-- ================= FIREBASE AUTH LOGIC ================= -->
 <script type="module">
-import { signUp as fbSignUp, googleLogin as fbGoogleLogin } from "./auth.js";
+    import { signUp as fbSignUp, loginEmail as fbLogin, googleLogin as fbGoogleLogin } from "./auth.js";
 
-/* SIGNUP */
-window.signup = async function () {
-    try {
+    /* CREATE ACCOUNT */
+    window.signup = async function () {
         const name = document.getElementById("name").value;
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
 
-        const user = await fbSignUp(email, password, name);
+        if (!email || !password) return alert("Neural Link Denied: Missing Credentials");
 
-        enterApp(name || "User");
+        try {
+            const user = await fbSignUp(email, password, name);
+            enterApp(name || user.email);
+        } catch (err) {
+            console.error(err);
+            alert("Signup Failed: " + err.message);
+        }
+    };
 
-    } catch (err) {
-        console.error(err);
-        alert("Signup failed");
+    /* LOGIN */
+    window.login = async function () {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        if (!email || !password) return alert("Credentials Required");
+
+        try {
+            const user = await fbLogin(email, password);
+            enterApp(user.displayName || user.email);
+        } catch (err) {
+            console.error(err);
+            alert("Access Denied: " + err.message);
+        }
+    };
+
+    /* CONTINUE WITH GOOGLE */
+    window.googleLogin = async function () {
+        try {
+            const user = await fbGoogleLogin();
+            enterApp(user.displayName || "Explorer");
+        } catch (err) {
+            console.error(err);
+            alert("Google Authentication Failed");
+        }
+    };
+
+    /* UI TRANSITION */
+    function enterApp(name) {
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("app").style.display = "flex";
+        document.getElementById("userName").innerText = name;
+        
+        // Focus the chat input automatically
+        setTimeout(() => document.getElementById("userInput").focus(), 500);
     }
-};
-
-/* LOGIN */
-window.login = function () {
-    alert("Login will be enabled via Firebase Auth login next step.");
-};
-
-/* GOOGLE LOGIN */
-window.googleLogin = async function () {
-    try {
-        const user = await fbGoogleLogin();
-        enterApp(user.displayName || "User");
-
-    } catch (err) {
-        console.error(err);
-        alert("Google login failed");
-    }
-};
-
-/* ENTER APP */
-function enterApp(name) {
-    document.getElementById("loginScreen").style.display = "none";
-    document.getElementById("app").style.display = "flex";
-    document.getElementById("userName").innerText = name;
-}
 </script>
 
-<!-- CHAT SCRIPT -->
 <script src="script.js"></script>
 
 </body>
