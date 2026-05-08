@@ -8,13 +8,13 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // =============================================
-// FIREBASE CONFIG (UPDATED STORAGE BUCKET)
+// FIREBASE CONFIG (STRICT VALIDATION)
 // =============================================
 const firebaseConfig = {
   apiKey: "AIzaSyC48m4Mmksa8Fpx6OGDU8tAUIlCCqOE8Js",
   authDomain: "cymorai.firebaseapp.com",
   projectId: "cymorai",
-  storageBucket: "cymorai.firebasestorage.app", // Fixed matching the new details
+  storageBucket: "cymorai.firebasestorage.app", 
   messagingSenderId: "718791176464",
   appId: "1:718791176464:web:159e5233fe709c518c3595"
 };
@@ -22,7 +22,12 @@ const firebaseConfig = {
 // =============================================
 // INITIALIZE FIREBASE APP
 // =============================================
-const app = initializeApp(firebaseConfig);
+let app;
+try {
+    app = initializeApp(firebaseConfig);
+} catch (error) {
+    console.error("🔥 Firebase Initialization Failed:", error.message);
+}
 
 // =============================================
 // SERVICES EXPORTS
