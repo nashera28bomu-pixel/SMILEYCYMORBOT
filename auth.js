@@ -1,137 +1,214 @@
 import { auth, db } from "./firebase.js";
+import {
+    collection,
+    addDoc,
+    getDocs,
+    query,
+    orderBy,
+    limit,
+    serverTimestamp
+} from "firebase/firestore";
 
 import {
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    GoogleAuthProvider,
-    signInWithPopup,
-    signOut,
     onAuthStateChanged
 } from "firebase/auth";
 
-import { doc, setDoc, getDoc } from "firebase/firestore";
+// =============================================
+// CYMOR AI ELITE SCRIPT + FIREBASE MEMORY
+// =============================================
+
+const API_URL =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+        ? "http://localhost:3000/chat"
+        : "/chat";
+
+// DOM
+const chatBox = document.getElementById("chatBox");
+const userInput = document.getElementById("userInput");
+
+// CURRENT USER
+let currentUser = null;
 
 // =============================================
-// GOOGLE PROVIDER
+// AUTH LISTENER (FIXED)
 // =============================================
-const provider = new GoogleAuthProvider();
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        currentUser = user;
+
+        console.log("🔥 Logged in:", user.email);
+
+        await loadChatHistory();
+    }
+});
 
 // =============================================
-// SIGN UP (EMAIL + PASSWORD)
+// LOAD CHAT HISTORY
 // =============================================
-export async function signUp(email, password, name) {
+async function loadChatHistory() {
+    if (!currentUser) return;
+
     try {
-        const userCredential =
-            await createUserWithEmailAndPassword(auth, email, password);
+        const chatRef = collection(db, "users", currentUser.uid, "chats");
+        const q = query(chatRef, orderBy("timestamp"), limit(50));
 
-        const user = userCredential.user;
+        const snapshot = await getDocs(q);
 
-        // Save user profile in Firestore
-        await setDoc(doc(db, "users", user.uid), {
-            uid: user.uid,
-            name: name,
-            email: email,
-            createdAt: new Date().toISOString(),
-            role: "user"
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            createMessage(data.text, data.sender);
         });
 
-        console.log("🔥 User registered:", user.email);
-
-        return user;
-
-    } catch (error) {
-        console.error("❌ Signup error:", error.message);
-        throw error;
+    } catch (err) {
+        console.error("Chat load error:", err);
     }
 }
 
 // =============================================
-// LOGIN (EMAIL + PASSWORD)
+// SAVE MESSAGE
 // =============================================
-export async function login(email, password) {
+async function saveMessage(text, sender) {
+    if (!currentUser) return;
+
     try {
-        const userCredential =
-            await signInWithEmailAndPassword(auth, email, password);
+        const chatRef = collection(db, "users", currentUser.uid, "chats");
 
-        const user = userCredential.user;
+        await addDoc(chatRef, {
+            text,
+            sender,
+            timestamp: serverTimestamp()
+        });
 
-        console.log("✅ Logged in:", user.email);
-
-        return user;
-
-    } catch (error) {
-        console.error("❌ Login error:", error.message);
-        throw error;
+    } catch (err) {
+        console.error("Save error:", err);
     }
 }
 
 // =============================================
-// GOOGLE LOGIN
+// UI FUNCTIONS
 // =============================================
-export async function googleLogin() {
-    try {
-        const result =
-            await signInWithPopup(auth, provider);
-
-        const user = result.user;
-
-        // Save or update Firestore profile
-        await setDoc(doc(db, "users", user.uid), {
-            uid: user.uid,
-            name: user.displayName,
-            email: user.email,
-            photoURL: user.photoURL,
-            createdAt: new Date().toISOString(),
-            role: "user"
-        }, { merge: true });
-
-        console.log("🌐 Google login success:", user.email);
-
-        return user;
-
-    } catch (error) {
-        console.error("❌ Google login error:", error.message);
-        throw error;
-    }
+function setPrompt(text) {
+    userInput.value = text;
+    userInput.focus();
 }
 
-// =============================================
-// LOGOUT
-// =============================================
-export async function logout() {
-    await signOut(auth);
-    console.log("👋 User logged out");
+function handleKey(event) {
+    if (event.key === "Enter") sendMessage();
 }
 
-// =============================================
-// GET CURRENT USER DATA (FIRESTORE)
-// =============================================
-export async function getUserData(uid) {
-    const ref = doc(db, "users", uid);
-    const snap = await getDoc(ref);
+function createMessage(text, sender) {
+    const message = document.createElement("div");
+    message.className = `message ${sender}`;
+    message.innerHTML = text;
 
-    if (snap.exists()) {
-        return snap.data();
-    } else {
-        return null;
-    }
+    chatBox.appendChild(message);
+    scrollToBottom();
+
+    return message;
 }
 
-// =============================================
-// AUTH STATE LISTENER (IMPORTANT FOR YOUR APP)
-// =============================================
-export function onUserStateChanged(callback) {
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            const userData = await getUserData(user.uid);
-
-            callback({
-                uid: user.uid,
-                email: user.email,
-                ...userData
-            });
-        } else {
-            callback(null);
-        }
+function scrollToBottom() {
+    chatBox.scrollTo({
+        top: chatBox.scrollHeight,
+        behavior: "smooth"
     });
 }
+
+// =============================================
+// TYPEWRITER
+// =============================================
+function typeWriter(element, text, speed = 10) {
+    let i = 0;
+    element.innerHTML = "";
+
+    function type() {
+        if (i < text.length) {
+            element.innerHTML += text.charAt(i);
+            i++;
+            scrollToBottom();
+            setTimeout(type, speed);
+        }
+    }
+    type();
+}
+
+// =============================================
+// THINKING
+// =============================================
+function createThinkingMessage() {
+    const thinking = document.createElement("div");
+    thinking.className = "message bot";
+    thinking.innerHTML = "⚡ CymorAI processing neural memory...";
+    chatBox.appendChild(thinking);
+    scrollToBottom();
+    return thinking;
+}
+
+// =============================================
+// SEND MESSAGE
+// =============================================
+async function sendMessage() {
+    const message = userInput.value.trim();
+    if (!message) return;
+
+    if (!currentUser) {
+        alert("Please login first");
+        return;
+    }
+
+    userInput.disabled = true;
+
+    createMessage(message, "user");
+    await saveMessage(message, "user");
+
+    userInput.value = "";
+
+    const thinking = createThinkingMessage();
+
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                message,
+                userId: currentUser.uid
+            })
+        });
+
+        const data = await response.json();
+
+        thinking.remove();
+
+        if (!response.ok) throw new Error(data.reply);
+
+        const botMessage = createMessage("", "bot");
+        typeWriter(botMessage, data.reply, 8);
+
+        await saveMessage(data.reply, "bot");
+
+    } catch (error) {
+        thinking.remove();
+        createMessage(`⚠️ ${error.message}`, "bot");
+    }
+
+    userInput.disabled = false;
+    userInput.focus();
+}
+
+// =============================================
+// STARTUP
+// =============================================
+window.addEventListener("load", () => {
+    setTimeout(() => {
+        createMessage(
+            "🚀 CymorAI Neural Core Active. Waiting for authentication...",
+            "bot"
+        );
+    }, 1000);
+});
+
+// GLOBAL EXPORT
+window.sendMessage = sendMessage;
+window.setPrompt = setPrompt;
+window.handleKey = handleKey;
