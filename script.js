@@ -26,15 +26,29 @@ const userInput = document.getElementById("userInput");
 let currentUser = null;
 
 // =============================================
-// AUTH LISTENER (IDENTIFY USER)
+// AUTH LISTENER (IDENTIFY USER & BYPASS LOGIN)
 // =============================================
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
-
         console.log("🔥 Logged in:", user.email);
 
+        // UI ELEMENTS FOR TRANSITION
+        const loginScreen = document.getElementById("loginScreen");
+        const appScreen = document.getElementById("app");
+        const userNameDisp = document.getElementById("userName");
+
+        // INSTANT UI UPGRADE: Bypass login if session exists
+        if(loginScreen) loginScreen.style.display = "none";
+        if(appScreen) appScreen.style.display = "flex";
+        if(userNameDisp) userNameDisp.innerText = user.displayName || user.email;
+
+        // LOAD MEMORY
         await loadChatHistory();
+    } else {
+        // If logged out, ensure login screen is visible
+        document.getElementById("loginScreen").style.display = "flex";
+        document.getElementById("app").style.display = "none";
     }
 });
 
@@ -43,6 +57,9 @@ auth.onAuthStateChanged(async (user) => {
 // =============================================
 async function loadChatHistory() {
     if (!currentUser) return;
+
+    // Clear chatBox before loading to prevent duplicates on refresh
+    chatBox.innerHTML = "";
 
     const chatRef = collection(db, "users", currentUser.uid, "chats");
     const q = query(chatRef, orderBy("timestamp"), limit(50));
@@ -74,7 +91,9 @@ async function saveMessage(text, sender) {
 // QUICK PROMPTS
 // =============================================
 function setPrompt(text) {
-    userInput.value = text;
+    // Remove the emoji prefix if you just want the text sent to the AI
+    const cleanText = text.replace(/[^a-zA-Z ]/g, "").trim(); 
+    userInput.value = cleanText;
     userInput.focus();
 }
 
@@ -181,7 +200,7 @@ async function sendMessage() {
         await saveMessage(data.reply, "bot");
 
     } catch (error) {
-        thinking.remove();
+        if (thinking) thinking.remove();
 
         createMessage(
             `⚠️ ${error.message}`,
@@ -197,12 +216,15 @@ async function sendMessage() {
 // STARTUP
 // =============================================
 window.addEventListener("load", () => {
+    // Small delay to let the UI settle
     setTimeout(() => {
-        createMessage(
-            "🚀 CymorAI Neural Core Active. Waiting for authenticated user...",
-            "bot"
-        );
-    }, 1000);
+        if (!currentUser) {
+            createMessage(
+                "🚀 CymorAI Neural Core Active. Waiting for authenticated user...",
+                "bot"
+            );
+        }
+    }, 1500);
 });
 
 // GLOBAL ACCESS
