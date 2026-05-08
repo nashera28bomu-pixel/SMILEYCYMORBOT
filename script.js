@@ -1,4 +1,8 @@
-// Set prompt when shortcut is clicked
+// Determine if we are running locally or on Render
+const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "http://localhost:3000/chat" 
+    : "/chat";
+
 function setPrompt(text) { 
     const input = document.getElementById("userInput");
     if (input) {
@@ -7,7 +11,6 @@ function setPrompt(text) {
     }
 }
 
-// Handle Enter key for submission
 function handleKey(e) {
     if (e.key === "Enter") sendMessage();
 }
@@ -19,41 +22,40 @@ async function sendMessage() {
     
     if (!userText) return;
 
-    // 1. Add User Message to UI
+    console.log("📤 Sending message to:", API_URL);
+
+    // 1. UI Update: User Message
     chatBox.insertAdjacentHTML('beforeend', `<div class="message user">${userText}</div>`);
     input.value = "";
     chatBox.scrollTop = chatBox.scrollHeight;
 
-    // 2. Show Thinking Animation with a unique ID
+    // 2. UI Update: Thinking State
     const typingId = "typing-" + Date.now();
     chatBox.insertAdjacentHTML('beforeend', `
         <div class="message bot" id="${typingId}">
-            <em style="opacity: 0.7;">Thinking...</em>
+            <em style="opacity: 0.7;">CymorAI is thinking...</em>
         </div>
     `);
     chatBox.scrollTop = chatBox.scrollHeight;
 
     try {
-        // 3. The Fetch Call (Now correctly pointing to your local /chat route)
-        const response = await fetch("/chat", {
+        const response = await fetch(API_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message: userText })
         });
 
-        // 4. Handle Server Errors
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.reply || "Connection lost. Please refresh.");
-        }
-
         const data = await response.json();
 
-        // 5. Remove thinking message
+        // 3. Remove Thinking Animation
         const typingElement = document.getElementById(typingId);
         if (typingElement) typingElement.remove();
 
-        // 6. Create Bot Response Container
+        if (!response.ok) {
+            throw new Error(data.reply || "Server error occurred.");
+        }
+
+        // 4. UI Update: Bot Response with Typewriter Effect
         const botId = "msg-" + Date.now();
         chatBox.insertAdjacentHTML('beforeend', `<div class="message bot" id="${botId}"></div>`);
         
@@ -61,19 +63,19 @@ async function sendMessage() {
         const replyText = data.reply;
         let index = 0;
 
-        // 7. Elite Typewriter Effect
         function typeEffect() {
             if (index < replyText.length) {
                 botElement.textContent += replyText.charAt(index);
                 index++;
                 chatBox.scrollTop = chatBox.scrollHeight;
-                setTimeout(typeEffect, 8); // Fast and snappy
+                setTimeout(typeEffect, 10);
             }
         }
         typeEffect();
 
     } catch (error) {
-        // Handle failures gracefully
+        console.error("❌ Fetch Error:", error);
+        
         const typingElement = document.getElementById(typingId);
         if (typingElement) typingElement.remove();
 
@@ -83,6 +85,5 @@ async function sendMessage() {
             </div>
         `);
         chatBox.scrollTop = chatBox.scrollHeight;
-        console.error("Fetch Error:", error);
     }
 }
