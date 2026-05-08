@@ -111,7 +111,7 @@ html, body {
    FLOATING INPUT SECTION
 =================================== */
 .input-section {
-    padding: 20px;
+    padding: 15px 15px calc(15px + env(safe-area-inset-bottom));
     background: rgba(10, 14, 20, 0.98);
     display: flex;
     gap: 12px;
@@ -161,12 +161,46 @@ html, body {
 }
 
 /* ===================================
-   MOBILE ADAPTATION
+   MOBILE OVERRIDE FIX
 =================================== */
-@media(max-width: 600px) {
+@media(max-width: 768px) {
+    .main-container {
+        padding: 0;
+        margin: 0;
+        display: block; /* Stack vertically instead of side-by-side */
+        overflow: hidden;
+        height: 100vh;
+    }
+
+    /* Hide the Hero panel on mobile so the chat has room */
+    .hero-panel {
+        display: none !important;
+    }
+
     .chat-panel {
-        max-width: 100%;
+        width: 100%;
+        height: 100vh;
+        max-width: none;
         border: none;
+        border-radius: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-box {
+        flex: 1; /* This forces the box to take up all available space */
+        padding-bottom: 80px; /* Room for the fixed input at the bottom */
+    }
+
+    .input-section {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        z-index: 100;
+        background: #0a0e14;
+        padding: 15px;
+        padding-bottom: calc(15px + env(safe-area-inset-bottom));
     }
     
     .message {
