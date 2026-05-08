@@ -1,7 +1,7 @@
 {
   "name": "cymorai",
-  "version": "3.0.0",
-  "description": "CymorAI Futuristic Neural Intelligence System",
+  "version": "3.1.0",
+  "description": "CymorAI Futuristic Neural Intelligence System with Firebase Memory, Admin Analytics, and Groq AI Core",
   "main": "server.js",
 
   "scripts": {
@@ -13,7 +13,9 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "openai": "^4.56.0"
+    "openai": "^4.56.0",
+
+    "firebase": "^10.7.1"
   },
 
   "devDependencies": {
@@ -31,6 +33,9 @@
     "chatbot",
     "llama",
     "neural-ai",
+    "firebase",
+    "ai-memory",
+    "admin-dashboard",
     "futuristic-ai"
   ],
 
