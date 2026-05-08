@@ -7,11 +7,110 @@
 <title>CYMOR AI | Intelligent Nexus</title>
 
 <link rel="stylesheet" href="style.css">
-
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ===== LOGIN OVERLAY ===== */
+.login-screen {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at top, #1a0000, #000000);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+/* Glass card */
+.login-box {
+    width: 360px;
+    padding: 30px;
+    border-radius: 18px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,0,0,0.3);
+    box-shadow: 0 0 25px rgba(255,0,0,0.3);
+    backdrop-filter: blur(12px);
+    text-align: center;
+}
+
+/* Title */
+.login-box h1 {
+    font-family: 'Orbitron', sans-serif;
+    color: #ff0033;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    text-shadow: 0 0 15px red;
+}
+
+/* Inputs */
+.login-box input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    background: black;
+    border: 1px solid #ff0033;
+    border-radius: 8px;
+    color: white;
+    outline: none;
+}
+
+/* Buttons */
+.login-box button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    background: linear-gradient(45deg, #ff0033, #660000);
+    border: none;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 8px;
+    box-shadow: 0 0 15px red;
+}
+
+.login-box button:hover {
+    transform: scale(1.05);
+}
+
+/* Google button */
+.google-btn {
+    background: black !important;
+    border: 1px solid red;
+    box-shadow: 0 0 10px red;
+}
+
+/* Hide main app until login */
+.main-container {
+    display: none;
+}
+</style>
+
 </head>
 
 <body>
+
+<!-- 🔥 LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+
+    <div class="login-box">
+
+        <h1>CYMOR AI</h1>
+        <p style="color:#aaa; font-size:13px;">Neural Access Terminal</p>
+
+        <input type="text" id="name" placeholder="Enter Name">
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+
+        <button onclick="signup()">Create Account</button>
+        <button onclick="login()">Login</button>
+
+        <button class="google-btn" onclick="googleLogin()">
+            Continue with Google
+        </button>
+
+    </div>
+
+</div>
 
 <!-- MATRIX BACKGROUND -->
 <div class="matrix-bg"></div>
@@ -22,140 +121,83 @@
     <span>INTELLIGENCE</span>
     <span>NEXUS</span>
     <span>FUTURE</span>
-    <span>CYMOR TECH</span>
-    <span>NEURAL</span>
-    <span>AI CORE</span>
 </div>
 
 <!-- MAIN APP -->
-<div class="main-container">
+<div class="main-container" id="app">
 
-    <!-- LEFT PANEL -->
+    <!-- HERO PANEL (UNCHANGED) -->
     <section class="hero-panel">
-
-        <div class="status-bar">
-            <div class="status-item">
-                <span class="dot online"></span>
-                SYSTEM ONLINE
-            </div>
-
-            <div class="status-item">
-                ⚡ CYMOR CORE ACTIVE
-            </div>
-        </div>
-
         <div class="hero-content">
-
-            <h1>
-                CYMOR <span>AI</span>
-            </h1>
-
+            <h1>CYMOR <span>AI</span></h1>
             <h2>INTELLIGENT NEXUS</h2>
 
             <p class="hero-description">
-                Experience next-generation artificial intelligence engineered for creativity, coding, strategy, learning, and futuristic interaction.
+                Welcome, <span id="userName">User</span>. CymorAI is ready.
             </p>
-
-            <div class="hero-grid">
-
-                <div class="feature-card">
-                    <h3>⚡ FAST RESPONSES</h3>
-                    <p>Powered by advanced neural intelligence with ultra-fast response systems.</p>
-                </div>
-
-                <div class="feature-card">
-                    <h3>🧠 SMART THINKING</h3>
-                    <p>Analyze ideas, solve problems, generate content, and assist intelligently.</p>
-                </div>
-
-                <div class="feature-card">
-                    <h3>💻 CODE ASSISTANT</h3>
-                    <p>Generate and improve code with futuristic AI-powered development support.</p>
-                </div>
-
-                <div class="feature-card">
-                    <h3>🌌 FUTURISTIC UI</h3>
-                    <p>Immersive cyberpunk-inspired interface designed for elite interaction.</p>
-                </div>
-
-            </div>
-
         </div>
-
     </section>
 
     <!-- CHAT PANEL -->
     <section class="chat-panel">
 
         <div class="chat-header">
-
             <div>
                 <div class="chat-title">CYMOR AI</div>
                 <div class="chat-subtitle">Neural Intelligence Interface</div>
             </div>
 
-            <div class="live-badge">
-                LIVE
-            </div>
-
+            <div class="live-badge">LIVE</div>
         </div>
 
-        <!-- QUICK ACTIONS -->
-        <div class="quick-actions">
-
-            <button onclick="setPrompt('Help me code a futuristic website')">
-                💻 CODE
-            </button>
-
-            <button onclick="setPrompt('Write something motivational')">
-                🚀 MOTIVATE
-            </button>
-
-            <button onclick="setPrompt('Help me plan my future')">
-                📅 PLAN
-            </button>
-
-            <button onclick="setPrompt('Explain artificial intelligence')">
-                🧠 AI
-            </button>
-
-        </div>
-
-        <!-- CHAT -->
         <div class="chat-box" id="chatBox">
-
             <div class="message bot">
-                ⚡ Welcome back commander.<br><br>
-                CymorAI neural systems are online and awaiting your instructions.
+                ⚡ Welcome to CymorAI Neural System.
             </div>
-
         </div>
 
-        <!-- INPUT -->
         <div class="input-section">
-
-            <input
-                type="text"
-                id="userInput"
-                placeholder="Transmit your message..."
-                onkeypress="handleKey(event)"
-            >
-
-            <button class="send-btn" onclick="sendMessage()">
-                ➤
-            </button>
-
-        </div>
-
-        <!-- FOOTER -->
-        <div class="footer">
-            Engineered by <span>Legendary Smiley Cymor</span><br>
-            © CymorTechServices 2026
+            <input type="text" id="userInput" placeholder="Transmit your message...">
+            <button onclick="sendMessage()">➤</button>
         </div>
 
     </section>
 
 </div>
+
+<!-- SCRIPT -->
+<script type="module">
+import { signUp, googleLogin } from "./auth.js";
+
+/* SIGNUP */
+window.signup = async function () {
+    const name = document.getElementById("name").value;
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    const user = await signUp(email, password, name);
+
+    enterApp(name);
+};
+
+/* LOGIN (simple placeholder for now) */
+window.login = function () {
+    alert("Login function will use Firebase Auth login (next step).");
+};
+
+/* GOOGLE LOGIN */
+window.googleLogin = async function () {
+    const user = await googleLogin();
+    enterApp(user.displayName || "User");
+};
+
+/* ENTER APP */
+function enterApp(name) {
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("app").style.display = "flex";
+    document.getElementById("userName").innerText = name;
+}
+</script>
 
 <script src="script.js"></script>
 
