@@ -12,16 +12,19 @@ app.use(express.json());
 app.use(express.static(".")); 
 
 // --- AI INITIALIZATION ---
-// Ensure the API Key is present before initializing
 if (!process.env.GEMINI_API_KEY) {
-    console.error("❌ CRITICAL: GEMINI_API_KEY is missing in .env file");
+    console.error("❌ CRITICAL: GEMINI_API_KEY is missing in Environment Variables");
 }
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Fix: Use the full model path 'models/gemini-1.5-flash' to avoid 404 errors
+/**
+ * FIX: Updated model string to "gemini-1.5-flash-latest".
+ * This helps avoid the 404 error seen in your Render logs by 
+ * pointing to the most stable production endpoint.
+ */
 const model = genAI.getGenerativeModel({ 
-    model: "gemini-1.5-flash", 
+    model: "gemini-1.5-flash-latest", 
     systemInstruction: `You are CymorAI, an intelligent, friendly, and slightly futuristic AI assistant.
 - Be clear, helpful, and engaging.
 - Keep answers concise but powerful.
@@ -49,12 +52,11 @@ app.post("/chat", async (req, res) => {
             history: history,
             generationConfig: {
                 maxOutputTokens: 1000,
+                temperature: 0.7,
             },
         });
 
-        // Use a standard async call. The SDK handles most internal timeouts.
-        // On Render free tier, the 50s spin-up delay is handled by the browser request, 
-        // not the internal JS code.
+        // Sending the message
         const result = await chat.sendMessage(message);
         const response = await result.response;
         const text = response.text();
@@ -70,9 +72,10 @@ app.post("/chat", async (req, res) => {
         
         let errorMessage = "CymorAI is having trouble connecting. Try again.";
         
-        // Specific error handling for common API issues
+        // Handling the 404/Mismatch error explicitly
         if (error.message.includes("404") || error.message.includes("not found")) {
-            errorMessage = "Model version mismatch. Please contact admin.";
+            errorMessage = "CymorAI version mismatch. Try refreshing the page.";
+            console.log("Tip: Ensure your API key has access to the Flash model in your region.");
         } else if (error.message.includes("API_KEY_INVALID")) {
             errorMessage = "System Error: Invalid API Key.";
         } else if (error.message.includes("safety")) {
@@ -83,6 +86,7 @@ app.post("/chat", async (req, res) => {
     }
 });
 
+// Health check for Render monitoring
 app.get('/health', (req, res) => res.status(200).send('Systems Online'));
 
 app.listen(PORT, '0.0.0.0', () => {
