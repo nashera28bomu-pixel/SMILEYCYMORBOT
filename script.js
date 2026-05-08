@@ -26,25 +26,31 @@ async function sendMessage() {
     const typingId = "typing-" + Date.now();
     chatBox.insertAdjacentHTML('beforeend', `
         <div class="message bot" id="${typingId}">
-            <em>CymorAI is thinking...</em>
+            <em>Thinking...</em>
         </div>
     `);
     chatBox.scrollTop = chatBox.scrollHeight;
 
     try {
-        // Updated: Explicitly pointing to your Railway backend
-        const response = await fetch("https://smileycymorbot-production.up.railway.app/chat", {
+        /* CRITICAL FIX: Removed the specific Railway URL. 
+           Using "/chat" allows this to work on Render, Railway, or Localhost automatically.
+        */
+        const response = await fetch("/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message: userText })
         });
 
-        if (!response.ok) throw new Error("Server error");
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.reply || "Server error");
+        }
 
         const data = await response.json();
 
         // Remove thinking message
-        document.getElementById(typingId)?.remove();
+        const typingElement = document.getElementById(typingId);
+        if (typingElement) typingElement.remove();
 
         // Add Bot Container
         const botId = "msg-" + Date.now();
@@ -60,17 +66,21 @@ async function sendMessage() {
                 botElement.textContent += replyText.charAt(index);
                 index++;
                 chatBox.scrollTop = chatBox.scrollHeight;
-                setTimeout(typeEffect, 12); 
+                setTimeout(typeEffect, 10); // Slightly faster for better feel
             }
         }
         typeEffect();
 
     } catch (error) {
-        document.getElementById(typingId)?.remove();
+        // Remove thinking message on error
+        const typingElement = document.getElementById(typingId);
+        if (typingElement) typingElement.remove();
+
         chatBox.insertAdjacentHTML('beforeend', `
-            <div class="message bot" style="color: #ef4444;">
-                ⚠️ Connection error. Please check your network.
+            <div class="message bot" style="color: #ff4d4d; border-left: 3px solid #ff4d4d;">
+                ⚠️ ${error.message === "Server error" ? "Connection error. Please refresh." : error.message}
             </div>
         `);
+        chatBox.scrollTop = chatBox.scrollHeight;
     }
 }
