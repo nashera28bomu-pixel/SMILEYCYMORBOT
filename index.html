@@ -3,230 +3,445 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>CYMOR AI | Intelligent Nexus</title>
 
     <link rel="stylesheet" href="style.css">
+
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* ===== LOGIN OVERLAY ===== */
-        .login-screen {
-            position: fixed;
-            inset: 0;
-            background: radial-gradient(circle at top, #1a0000, #000000);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
+
+        /* =========================
+           LOGIN OVERLAY
+        ========================= */
+        .login-screen{
+            position:fixed;
+            inset:0;
+            background:radial-gradient(circle at top,#1a0000,#000000);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            z-index:9999;
         }
 
-        .login-box {
-            width: 360px;
-            padding: 30px;
-            border-radius: 18px;
-            background: rgba(0, 0, 0, 0.6);
-            border: 1px solid rgba(255, 0, 51, 0.3);
-            box-shadow: 0 0 25px rgba(255, 0, 51, 0.3);
-            backdrop-filter: blur(12px);
-            text-align: center;
+        .login-box{
+            width:360px;
+            padding:30px;
+            border-radius:18px;
+            background:rgba(0,0,0,0.65);
+            border:1px solid rgba(255,0,51,0.3);
+            box-shadow:0 0 30px rgba(255,0,51,0.3);
+            backdrop-filter:blur(14px);
+            text-align:center;
         }
 
-        .login-box h1 {
-            font-family: 'Orbitron', sans-serif;
-            color: #ff0033;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-            text-shadow: 0 0 15px red;
+        .login-box h1{
+            font-family:'Orbitron',sans-serif;
+            color:#ff0033;
+            letter-spacing:3px;
+            margin-bottom:10px;
+            text-shadow:0 0 15px red;
         }
 
-        .login-box input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            background: black;
-            border: 1px solid #ff0033;
-            border-radius: 8px;
-            color: white;
-            outline: none;
-            box-sizing: border-box; 
+        .login-box p{
+            color:#aaa;
+            font-size:13px;
+            margin-bottom:20px;
         }
 
-        .login-box button {
-            width: 100%;
-            padding: 12px;
-            margin-top: 10px;
-            background: linear-gradient(45deg, #ff0033, #660000);
-            border: none;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.4);
-            transition: transform 0.2s ease;
+        .login-box input{
+            width:100%;
+            padding:12px;
+            margin:10px 0;
+            background:black;
+            border:1px solid #ff0033;
+            border-radius:10px;
+            color:white;
+            outline:none;
+            box-sizing:border-box;
+            font-family:'Outfit',sans-serif;
         }
 
-        .login-box button:hover {
-            transform: scale(1.03);
-            background: linear-gradient(45deg, #ff1a4a, #800000);
+        .login-box input:focus{
+            box-shadow:0 0 15px rgba(255,0,51,0.4);
         }
 
-        .google-btn {
-            background: black !important;
-            border: 1px solid #ff0033 !important;
-            margin-top: 15px !important;
+        .login-box button{
+            width:100%;
+            padding:12px;
+            margin-top:10px;
+            background:linear-gradient(45deg,#ff0033,#660000);
+            border:none;
+            color:white;
+            font-weight:bold;
+            cursor:pointer;
+            border-radius:10px;
+            transition:0.25s;
+            font-family:'Orbitron',sans-serif;
+            box-shadow:0 0 15px rgba(255,0,0,0.4);
         }
 
-        /* ===== CHIP STYLING ===== */
-        .suggestion-chips {
-            display: flex;
-            gap: 10px;
-            padding: 15px 10px;
-            overflow-x: auto;
-            scrollbar-width: none; 
-        }
-        
-        .suggestion-chips::-webkit-scrollbar {
-            display: none; 
+        .login-box button:hover{
+            transform:scale(1.03);
+            background:linear-gradient(45deg,#ff1a4d,#7a0000);
         }
 
-        .chip {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 0, 51, 0.3);
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 11px;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.3s ease;
+        .google-btn{
+            background:black !important;
+            border:1px solid #ff0033 !important;
         }
 
-        .chip:hover {
-            background: #ff0033;
-            box-shadow: 0 0 15px #ff0033;
-            transform: translateY(-2px);
+        /* =========================
+           MAIN APP
+        ========================= */
+        .main-container{
+            display:none;
         }
 
-        .main-container {
-            display: none; 
+        /* =========================
+           SUGGESTION CHIPS
+        ========================= */
+        .suggestion-chips{
+            display:flex;
+            gap:10px;
+            overflow-x:auto;
+            padding:12px;
+            scrollbar-width:none;
         }
+
+        .suggestion-chips::-webkit-scrollbar{
+            display:none;
+        }
+
+        .chip{
+            border:none;
+            background:rgba(255,255,255,0.05);
+            color:white;
+            padding:10px 16px;
+            border-radius:30px;
+            cursor:pointer;
+            white-space:nowrap;
+            font-family:'Orbitron',sans-serif;
+            border:1px solid rgba(255,0,51,0.3);
+            transition:0.3s;
+        }
+
+        .chip:hover{
+            background:#ff0033;
+            box-shadow:0 0 15px #ff0033;
+            transform:translateY(-2px);
+        }
+
     </style>
 </head>
 
 <body>
 
+<!-- =========================
+     LOGIN SCREEN
+========================= -->
 <div class="login-screen" id="loginScreen">
+
     <div class="login-box">
+
         <h1>CYMOR AI</h1>
-        <p style="color:#aaa; font-size:13px; margin-bottom: 20px;">Neural Access Terminal</p>
 
-        <input type="text" id="name" placeholder="Full Name (For Signup)">
-        <input type="email" id="email" placeholder="Email Address" onkeydown="window.handleKey(event)">
-        <input type="password" id="password" placeholder="Password" onkeydown="window.handleKey(event)">
+        <p>Neural Access Terminal</p>
 
-        <button onclick="handleSignup()">Create Account</button>
-        <button onclick="handleLogin()">Login</button>
+        <input
+            type="text"
+            id="name"
+            placeholder="Full Name (Signup)"
+        >
 
-        <button class="google-btn" onclick="handleGoogleLogin()">
+        <input
+            type="email"
+            id="email"
+            placeholder="Email Address"
+        >
+
+        <input
+            type="password"
+            id="password"
+            placeholder="Password"
+            onkeydown="if(event.key==='Enter'){login()}"
+        >
+
+        <button onclick="signup()">
+            Create Account
+        </button>
+
+        <button onclick="login()">
+            Login
+        </button>
+
+        <button
+            class="google-btn"
+            onclick="googleLogin()"
+        >
             Continue with Google
         </button>
+
     </div>
+
 </div>
 
+<!-- =========================
+     MATRIX BACKGROUND
+========================= -->
+<div class="matrix-bg"></div>
+
+<!-- =========================
+     FLOATING WORDS
+========================= -->
+<div class="floating-words">
+    <span>CYMOR AI</span>
+    <span>INTELLIGENCE</span>
+    <span>NEXUS</span>
+    <span>FUTURE</span>
+</div>
+
+<!-- =========================
+     MAIN APP
+========================= -->
 <div class="main-container" id="app">
+
+    <!-- HERO -->
     <section class="hero-panel">
+
         <div class="hero-content">
-            <h1>CYMOR <span>AI</span></h1>
-            <h2>INTELLIGENT NEXUS</h2>
+
+            <h1>
+                CYMOR <span>AI</span>
+            </h1>
+
+            <h2>
+                INTELLIGENT NEXUS
+            </h2>
+
             <p class="hero-description">
-                Welcome, <span id="userName" style="color: #ff0033; font-weight: bold;">User</span>. CymorAI is ready.
+                Welcome,
+                <span
+                    id="userName"
+                    style="
+                        color:#ff0033;
+                        font-weight:bold;
+                    "
+                >
+                    User
+                </span>
+
+                . CymorAI is ready.
             </p>
+
         </div>
+
     </section>
 
+    <!-- CHAT -->
     <section class="chat-panel">
+
+        <!-- HEADER -->
         <div class="chat-header">
+
             <div>
-                <div class="chat-title">CYMOR AI</div>
-                <div class="chat-subtitle">Neural Intelligence Interface</div>
+
+                <div class="chat-title">
+                    CYMOR AI
+                </div>
+
+                <div class="chat-subtitle">
+                    Neural Intelligence Interface
+                </div>
+
             </div>
-            <div class="live-badge">LIVE</div>
+
+            <div class="live-badge">
+                LIVE
+            </div>
+
         </div>
 
+        <!-- QUICK CHIPS -->
         <div class="suggestion-chips">
-            <button class="chip" onclick="window.setPrompt('💻 CODE')">💻 CODE</button>
-            <button class="chip" onclick="window.setPrompt('🚀 MOTIVATE')">🚀 MOTIVATE</button>
-            <button class="chip" onclick="window.setPrompt('📅 PLAN')">📅 PLAN</button>
-            <button class="chip" onclick="window.setPrompt('🧠 AI')">🧠 AI</button>
+
+            <button
+                class="chip"
+                onclick="window.setPrompt('💻 Help me code')"
+            >
+                💻 CODE
+            </button>
+
+            <button
+                class="chip"
+                onclick="window.setPrompt('🚀 Motivate me')"
+            >
+                🚀 MOTIVATE
+            </button>
+
+            <button
+                class="chip"
+                onclick="window.setPrompt('📅 Create a plan for me')"
+            >
+                📅 PLAN
+            </button>
+
+            <button
+                class="chip"
+                onclick="window.setPrompt('🧠 Explain AI')"
+            >
+                🧠 AI
+            </button>
+
         </div>
 
-        <div class="chat-box" id="chatBox"></div>
+        <!-- CHAT BOX -->
+        <div class="chat-box" id="chatBox">
 
+            <div class="message bot">
+                ⚡ CymorAI Neural Core Initialized.
+            </div>
+
+        </div>
+
+        <!-- INPUT -->
         <div class="input-section">
-            <input type="text" id="userInput" placeholder="Transmit your message..." onkeydown="window.handleKey(event)">
-            <button onclick="window.sendMessage()" id="sendBtn">➤</button>
+
+            <input
+                type="text"
+                id="userInput"
+                placeholder="Transmit your message..."
+                onkeydown="window.handleKey(event)"
+            >
+
+            <button
+                id="sendBtn"
+                onclick="window.sendMessage()"
+            >
+                ➤
+            </button>
+
         </div>
+
     </section>
+
 </div>
 
+<!-- =========================
+     AUTH + LOGIN LOGIC
+========================= -->
 <script type="module">
-    import { signUp, loginEmail, googleLogin } from "./auth.js";
 
-    // --- HANDLE SIGNUP ---
-    window.handleSignup = async () => {
-        try {
-            const name = document.getElementById("name").value;
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
-            if(!email || !password) throw new Error("Neural Link Failure: Credentials missing.");
-            
-            await signUp(email, password, name);
-            console.log("Signup success. Transitioning...");
-        } catch (err) { 
-            console.error("Signup Error:", err);
-            alert("Signup Failed: " + err.message); 
-        }
-    };
+import {
+    signUp,
+    googleLogin,
+    loginUser
+} from "./auth.js";
 
-    // --- HANDLE LOGIN ---
-    window.handleLogin = async () => {
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
+/* SIGNUP */
+window.signup = async function () {
+
+    try {
+
+        const name =
+            document.getElementById("name").value;
+
+        const email =
+            document.getElementById("email").value;
+
+        const password =
+            document.getElementById("password").value;
 
         if (!email || !password) {
-            alert("Neural Link Failure: Please enter both email and password.");
+
+            alert("Please enter email and password.");
             return;
         }
 
-        try {
-            console.log("Attempting login for:", email);
-            await loginEmail(email, password);
-            // Note: UI transition is handled by script.js via onAuthStateChanged
-        } catch (err) { 
-            console.error("Login Error:", err.code);
-            
-            if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
-                alert("Access Denied: Incorrect email or password.");
-            } else if (err.code === 'auth/user-not-found') {
-                alert("Account Not Found: Please create an account first.");
-            } else {
-                alert("Login Failed: " + err.message);
-            }
-        }
-    };
+        await signUp(email, password, name);
 
-    // --- HANDLE GOOGLE ---
-    window.handleGoogleLogin = async () => {
-        try {
-            await googleLogin();
-        } catch (err) { 
-            alert("Google Auth Failed: " + err.message); 
+        enterApp(name || "User");
+
+    } catch (err) {
+
+        console.error(err);
+        alert(err.message);
+    }
+};
+
+/* LOGIN */
+window.login = async function () {
+
+    try {
+
+        const email =
+            document.getElementById("email").value;
+
+        const password =
+            document.getElementById("password").value;
+
+        if (!email || !password) {
+
+            alert("Please enter email and password.");
+            return;
         }
-    };
+
+        const user =
+            await loginUser(email, password);
+
+        enterApp(
+            user.displayName ||
+            "User"
+        );
+
+    } catch (err) {
+
+        console.error(err);
+        alert(err.message);
+    }
+};
+
+/* GOOGLE LOGIN */
+window.googleLogin = async function () {
+
+    try {
+
+        const user =
+            await googleLogin();
+
+        enterApp(
+            user.displayName ||
+            "User"
+        );
+
+    } catch (err) {
+
+        console.error(err);
+        alert(err.message);
+    }
+};
+
+/* ENTER APP */
+function enterApp(name) {
+
+    document.getElementById("loginScreen")
+        .style.display = "none";
+
+    document.getElementById("app")
+        .style.display = "flex";
+
+    document.getElementById("userName")
+        .innerText = name;
+}
+
 </script>
 
-<script type="module" src="script.js"></script>
+<!-- CHAT SCRIPT -->
+<script
+    type="module"
+    src="script.js"
+></script>
 
 </body>
 </html>
