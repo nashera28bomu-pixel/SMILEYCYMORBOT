@@ -1,3 +1,6 @@
+/* ===================================
+   GLOBAL CORE
+=================================== */
 *{
     margin:0;
     padding:0;
@@ -6,233 +9,167 @@
 
 :root{
     --bg:#020617;
-    --panel:rgba(10,15,30,0.58);
-    --glass:rgba(255,255,255,0.04);
-
+    --panel:rgba(10,15,30,0.95);
     --red:#ff0033;
-    --neon-red:#ff1a4d;
-    --deep-red:#7a001a;
-
-    --cyan:#00e5ff;
-    --green:#00ff9d;
-    --purple:#8b5cf6;
-
+    --neon-green:#00ffaa;
+    --bot-bubble: rgba(255, 255, 255, 0.05);
+    --user-gradient: linear-gradient(135deg, #004e92, #000428);
     --text:#e2e8f0;
-    --muted:#94a3b8;
 }
 
-/* ===================================
-   GLOBAL FIX (IMPORTANT)
-=================================== */
 html, body {
     height: 100%;
     overflow: hidden;
+    font-family: 'Outfit', sans-serif;
+    background: radial-gradient(circle at top,#1a0000 0%,#020617 60%);
+    color: var(--text);
 }
 
 /* ===================================
-   BODY
+   MAIN CONTAINER
 =================================== */
-body{
-    font-family:'Outfit',sans-serif;
-    background:
-    radial-gradient(circle at top,#1a0000 0%,#020617 60%),
-    linear-gradient(135deg,#020617,#000000);
-    color:var(--text);
+.main-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    background: #000;
 }
 
 /* ===================================
-   MATRIX BACKGROUND
+   SLEEK CHAT PANEL FIX
 =================================== */
-.matrix-bg{
-    position:fixed;
-    inset:0;
-    background:
-    radial-gradient(circle at top,#220000 0%,#020617 70%),
-    repeating-linear-gradient(
-        0deg,
-        rgba(255,0,51,0.03) 0px,
-        rgba(255,0,51,0.03) 1px,
-        transparent 1px,
-        transparent 40px
-    ),
-    repeating-linear-gradient(
-        90deg,
-        rgba(0,229,255,0.02) 0px,
-        rgba(0,229,255,0.02) 1px,
-        transparent 1px,
-        transparent 40px
-    );
-    z-index:-3;
-    animation:bgPulse 8s ease infinite alternate;
+.chat-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+    max-width: 600px;
+    background: #0a0e14;
+    border-left: 1px solid rgba(0, 255, 170, 0.1);
+    border-right: 1px solid rgba(0, 255, 170, 0.1);
+    position: relative;
 }
 
-@keyframes bgPulse{
-    from{ filter:brightness(1); }
-    to{ filter:brightness(1.15); }
+.chat-header {
+    padding: 20px;
+    border-bottom: 1px solid rgba(0, 255, 170, 0.1);
+    background: rgba(10, 14, 20, 0.8);
+    backdrop-filter: blur(10px);
 }
 
 /* ===================================
-   FLOATING WORDS
+   CHAT BOX & BUBBLES
 =================================== */
-.floating-words{
-    position:fixed;
-    inset:0;
-    overflow:hidden;
-    pointer-events:none;
-    z-index:-2;
-}
-
-/* (unchanged animations for brevity) */
-
-/* ===================================
-   MAIN CONTAINER FIX (IMPORTANT)
-=================================== */
-.main-container{
-    width:100vw;
-    height:100vh;
-    display:flex;
-    gap:20px;
-    padding:20px;
-
-    overflow: hidden;   /* FIX */
-}
-
-/* ===================================
-   HERO PANEL
-=================================== */
-.hero-panel{
-    flex:1;
-    background:var(--panel);
-    backdrop-filter:blur(30px);
-    border:1px solid rgba(255,0,51,0.12);
-    border-radius:28px;
-    padding:35px;
-    overflow:auto;
-}
-
-/* ===================================
-   CHAT PANEL FIX (IMPORTANT)
-=================================== */
-.chat-panel{
-    width:430px;
-    display:flex;
-    flex-direction:column;
-    background:var(--panel);
-    backdrop-filter:blur(35px);
-    border:1px solid rgba(255,0,51,0.15);
-    border-radius:28px;
-    overflow:hidden;
-
-    height:100vh;   /* FIX */
-}
-
-/* ===================================
-   CHAT BOX FIX (MOST IMPORTANT)
-=================================== */
-.chat-box{
+.chat-box {
     flex: 1;
     overflow-y: auto;
-    min-height: 0;   /* FIX */
-    padding:18px;
-    scroll-behavior:smooth;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    scrollbar-width: none; /* Firefox */
+}
+
+.chat-box::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+.message {
+    max-width: 85%;
+    padding: 12px 18px;
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.6;
+    word-wrap: break-word;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message.user {
+    align-self: flex-end;
+    background: var(--user-gradient);
+    color: white;
+    border-bottom-right-radius: 4px;
+    border: 1px solid rgba(0, 191, 255, 0.3);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.message.bot {
+    align-self: flex-start;
+    background: var(--bot-bubble);
+    color: #e0e0e0;
+    border-bottom-left-radius: 4px;
+    border: 1px solid rgba(0, 255, 170, 0.2);
 }
 
 /* ===================================
-   CHAT HEADER
+   FLOATING INPUT SECTION
 =================================== */
-.chat-header{
-    padding:22px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    border-bottom:1px solid rgba(255,0,51,0.08);
+.input-section {
+    padding: 20px;
+    background: rgba(10, 14, 20, 0.98);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    border-top: 1px solid rgba(0, 255, 170, 0.1);
+}
+
+#userInput {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(0, 255, 170, 0.3);
+    padding: 14px 22px;
+    border-radius: 30px;
+    color: white;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+#userInput:focus {
+    border-color: var(--neon-green);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 0 15px rgba(0, 255, 170, 0.1);
+}
+
+#sendBtn {
+    background: var(--neon-green);
+    border: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#sendBtn:hover {
+    transform: scale(1.1) rotate(-10deg);
+    box-shadow: 0 0 20px var(--neon-green);
+}
+
+#sendBtn svg, #sendBtn i {
+    color: #000;
+    font-size: 1.4rem;
 }
 
 /* ===================================
-   INPUT SECTION
+   MOBILE ADAPTATION
 =================================== */
-.input-section{
-    display:flex;
-    gap:10px;
-    padding:16px;
-    border-top:1px solid rgba(255,0,51,0.08);
-    background:rgba(0,0,0,0.15);
-}
-
-/* ===================================
-   INPUT
-=================================== */
-.input-section input{
-    flex:1;
-    padding:14px;
-    border-radius:14px;
-    border:1px solid rgba(255,0,51,0.1);
-    background:rgba(0,0,0,0.45);
-    color:white;
-    outline:none;
-}
-
-/* ===================================
-   SEND BUTTON
-=================================== */
-.input-section button{
-    width:60px;
-    border:none;
-    border-radius:14px;
-    background:linear-gradient(135deg,#ff0033,#8b0000);
-    color:white;
-    font-size:20px;
-    cursor:pointer;
-    transition:0.3s ease;
-}
-
-/* ===================================
-   THINKING (🧠 AI STATUS)
-=================================== */
-.thinking{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    color:#00ffcc;
-    font-style:italic;
-    animation:pulse 1.2s infinite;
-}
-
-.thinking::before{
-    content:"🧠";
-    font-size:22px;
-    filter:drop-shadow(0 0 10px #00ffee);
-    animation:brainGlow 1s infinite alternate;
-}
-
-@keyframes brainGlow{
-    from{ transform:scale(1); }
-    to{ transform:scale(1.15); }
-}
-
-@keyframes pulse{
-    0%{opacity:0.5;}
-    50%{opacity:1;}
-    100%{opacity:0.5;}
-}
-
-/* ===================================
-   MOBILE FIX
-=================================== */
-@media(max-width:1000px){
-
-    .main-container{
-        flex-direction:column;
-        padding:10px;
-        overflow:hidden;
+@media(max-width: 600px) {
+    .chat-panel {
+        max-width: 100%;
+        border: none;
     }
-
-    .hero-panel{
-        display:none;
-    }
-
-    .chat-panel{
-        width:100%;
-        height:100vh;
+    
+    .message {
+        max-width: 90%;
     }
 }
