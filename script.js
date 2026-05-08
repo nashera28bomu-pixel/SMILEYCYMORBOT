@@ -1,8 +1,9 @@
 // =============================================
-// CYMOR AI ELITE SCRIPT - STABLE VERSION
+// CYMOR AI ELITE SCRIPT - FULL INTEGRATION
 // =============================================
 
 import { auth, db } from "./firebase.js";
+
 import {
     collection,
     addDoc,
@@ -28,7 +29,7 @@ const API_URL =
 let chatBox, userInput, sendBtn;
 let currentUser = null;
 
-// Initialization
+// Ensure DOM is ready before assigning elements
 window.addEventListener("DOMContentLoaded", () => {
     chatBox = document.getElementById("chatBox");
     userInput = document.getElementById("userInput");
@@ -43,16 +44,19 @@ auth.onAuthStateChanged(async (user) => {
         currentUser = user;
         console.log("🔥 Neural Link Established:", user.email);
 
+        // UI Transitions
         document.getElementById("loginScreen").style.display = "none";
         document.getElementById("app").style.display = "flex";
 
+        // Set User Name
         const firstName = user.displayName ? user.displayName.split(" ")[0] : "Explorer";
         document.getElementById("userName").innerText = firstName;
 
+        // Load Chat
         await loadChatHistory();
 
-        // Welcome trigger with a slight delay for smooth entry
-        if (chatBox && chatBox.children.length === 0) {
+        // Updated Logic: Auto-welcome every time a link is established
+        if (chatBox) {
             setTimeout(() => sendWelcome(firstName), 500);
         }
     } else {
@@ -61,6 +65,9 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
+// =============================================
+// WELCOME MESSAGE LOGIC
+// =============================================
 function sendWelcome(name) {
     const welcomeMsg = createMessage("", "bot");
     typeWriter(welcomeMsg, `Hi ${name}! 🚀 How may I be of help to you today?`, 30);
@@ -111,9 +118,11 @@ async function sendMessage() {
     const message = userInput.value.trim();
     if (!message) return;
 
+    // Lock UI
     userInput.disabled = true;
     sendBtn.disabled = true;
 
+    // Display User Message
     createMessage(message, "user");
     await saveMessage(message, "user");
     userInput.value = "";
@@ -136,8 +145,7 @@ async function sendMessage() {
         if (!response.ok) throw new Error(data.reply || "Neural Link Interrupted");
 
         const botMsg = createMessage("", "bot");
-        // Faster typewriter for long AI responses
-        typeWriter(botMsg, data.reply, 10); 
+        typeWriter(botMsg, data.reply, 15);
         await saveMessage(data.reply, "bot");
 
     } catch (error) {
@@ -155,7 +163,7 @@ async function sendMessage() {
 // =============================================
 function createMessage(text, sender) {
     const msg = document.createElement("div");
-    msg.className = `message ${sender}`;
+    msg.className = `message ${sender}`; 
     msg.innerHTML = text;
 
     chatBox.appendChild(msg);
@@ -179,7 +187,7 @@ function typeWriter(element, text, speed = 20) {
         if (i < text.length) {
             element.innerHTML += text.charAt(i);
             i++;
-            // During typewriter, use instant scroll for better performance
+            // Instant scroll during typing for smoothness
             chatBox.scrollTop = chatBox.scrollHeight;
             setTimeout(type, speed);
         }
@@ -187,20 +195,18 @@ function typeWriter(element, text, speed = 20) {
     type();
 }
 
-/**
- * Enhanced Scroll Logic
- * @param {boolean} instant - If true, skips smooth animation (useful for loading history)
- */
+// Enhanced Scroll Logic
 function scrollToBottom(instant = false) {
     if (!chatBox) return;
-    
     if (instant) {
         chatBox.scrollTop = chatBox.scrollHeight;
     } else {
-        chatBox.scrollTo({
-            top: chatBox.scrollHeight,
-            behavior: "smooth"
-        });
+        setTimeout(() => {
+            chatBox.scrollTo({
+                top: chatBox.scrollHeight,
+                behavior: "smooth"
+            });
+        }, 50);
     }
 }
 
