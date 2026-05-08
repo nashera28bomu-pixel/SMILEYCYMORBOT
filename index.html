@@ -3,220 +3,161 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CymorAI</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
-<style>
-    :root {
-        --neon-green: #22c55e;
-        --neon-blue: #38bdf8;
-        --glass: rgba(30, 41, 59, 0.7);
-        --text-dim: rgba(255, 255, 255, 0.6);
-    }
 
-    body {
-        margin: 0;
-        font-family: 'Outfit', sans-serif;
-        background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
-        color: white;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        overflow: hidden;
-        position: relative;
-    }
+<title>CYMOR AI | Intelligent Nexus</title>
 
-    /* Floating Background Text */
-    .floating-bg {
-        position: absolute;
-        font-size: 10vw;
-        font-weight: 900;
-        color: rgba(255, 255, 255, 0.03);
-        white-space: nowrap;
-        z-index: -1;
-        animation: float 20s linear infinite;
-        user-select: none;
-    }
+<link rel="stylesheet" href="style.css">
 
-    @keyframes float {
-        0% { transform: translateX(100%); }
-        100% { transform: translateX(-100%); }
-    }
-
-    /* Main Glass Card */
-    .app-card {
-        width: 95%;
-        max-width: 500px;
-        height: 85vh;
-        background: var(--glass);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 28px;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-        position: relative;
-        z-index: 10;
-    }
-
-    header {
-        padding: 20px;
-        text-align: center;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-
-    .header-title {
-        font-size: 26px;
-        font-weight: 600;
-        color: var(--neon-green);
-        text-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
-    }
-
-    .header-sub {
-        font-size: 11px;
-        color: var(--neon-blue);
-        margin-top: 4px;
-        text-transform: uppercase;
-        letter-spacing: 3px;
-        opacity: 0.8;
-    }
-
-    .dashboard {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        padding-top: 15px;
-    }
-
-    .shortcut {
-        background: rgba(255,255,255,0.05);
-        padding: 8px 14px;
-        border-radius: 12px;
-        font-size: 12px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .shortcut:hover {
-        background: var(--neon-blue);
-        color: #020617;
-        transform: translateY(-2px);
-    }
-
-    .chat-container {
-        flex: 1;
-        overflow-y: auto;
-        padding: 20px;
-        scrollbar-width: none;
-    }
-
-    .chat-container::-webkit-scrollbar { display: none; }
-
-    .message { 
-        margin-bottom: 18px; 
-        line-height: 1.5;
-        max-width: 85%;
-        word-wrap: break-word;
-        animation: fadeIn 0.4s ease forwards;
-    }
-    
-    .user { 
-        color: var(--neon-blue); 
-        margin-left: auto;
-        text-align: right;
-        font-weight: 400;
-    }
-
-    .bot { 
-        color: #e2e8f0; 
-        background: rgba(255,255,255,0.03);
-        padding: 10px 15px;
-        border-radius: 0 15px 15px 15px;
-        border-left: 2px solid var(--neon-green);
-    }
-
-    .input-area {
-        padding: 15px 20px;
-        display: flex;
-        gap: 10px;
-        background: rgba(0,0,0,0.2);
-    }
-
-    input {
-        flex: 1;
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.1);
-        padding: 14px;
-        border-radius: 14px;
-        color: white;
-        outline: none;
-        transition: border 0.3s;
-    }
-
-    input:focus { border-color: var(--neon-blue); }
-
-    button {
-        background: var(--neon-green);
-        border: none;
-        padding: 0 18px;
-        border-radius: 14px;
-        cursor: pointer;
-        color: #020617;
-        font-size: 18px;
-        transition: transform 0.2s;
-    }
-
-    button:active { transform: scale(0.95); }
-
-    footer {
-        padding: 15px;
-        text-align: center;
-        font-size: 10px;
-        color: var(--text-dim);
-        border-top: 1px solid rgba(255,255,255,0.05);
-        letter-spacing: 0.5px;
-    }
-
-    footer span { color: var(--neon-blue); font-weight: 600; }
-
-    @keyframes fadeIn { 
-        from { opacity: 0; transform: translateY(10px); } 
-        to { opacity: 1; transform: translateY(0); } 
-    }
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
 
-<div class="floating-bg">CYMOR AI • CYMOR AI • CYMOR AI • CYMOR AI</div>
+<!-- MATRIX BACKGROUND -->
+<div class="matrix-bg"></div>
 
-<div class="app-card">
-    <header>
-        <div class="header-title">CYMOR AI</div>
-        <div class="header-sub">Intelligent Nexus</div>
-        
-        <div class="dashboard">
-            <span class="shortcut" onclick="setPrompt('Write a love letter')">❤️ Love</span>
-            <span class="shortcut" onclick="setPrompt('Analyze this code')">💻 Code</span>
-            <span class="shortcut" onclick="setPrompt('Help me plan')">📅 Plan</span>
+<!-- FLOATING CYMOR WORDS -->
+<div class="floating-words">
+    <span>CYMOR AI</span>
+    <span>INTELLIGENCE</span>
+    <span>NEXUS</span>
+    <span>FUTURE</span>
+    <span>CYMOR TECH</span>
+    <span>NEURAL</span>
+    <span>AI CORE</span>
+</div>
+
+<!-- MAIN APP -->
+<div class="main-container">
+
+    <!-- LEFT PANEL -->
+    <section class="hero-panel">
+
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="dot online"></span>
+                SYSTEM ONLINE
+            </div>
+
+            <div class="status-item">
+                ⚡ CYMOR CORE ACTIVE
+            </div>
         </div>
-    </header>
 
-    <div class="chat-container" id="chatBox">
-        <div class="message bot">Welcome back. How can I assist you today?</div>
-    </div>
+        <div class="hero-content">
 
-    <div class="input-area">
-        <input type="text" id="userInput" placeholder="Type a message..." onkeypress="handleKey(event)">
-        <button onclick="sendMessage()">➤</button>
-    </div>
+            <h1>
+                CYMOR <span>AI</span>
+            </h1>
 
-    <footer>
-        Site made by the <span>Legendary Smiley Cymor</span><br>
-        copyright @CymorTechServices2026
-    </footer>
+            <h2>INTELLIGENT NEXUS</h2>
+
+            <p class="hero-description">
+                Experience next-generation artificial intelligence engineered for creativity, coding, strategy, learning, and futuristic interaction.
+            </p>
+
+            <div class="hero-grid">
+
+                <div class="feature-card">
+                    <h3>⚡ FAST RESPONSES</h3>
+                    <p>Powered by advanced neural intelligence with ultra-fast response systems.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>🧠 SMART THINKING</h3>
+                    <p>Analyze ideas, solve problems, generate content, and assist intelligently.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>💻 CODE ASSISTANT</h3>
+                    <p>Generate and improve code with futuristic AI-powered development support.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>🌌 FUTURISTIC UI</h3>
+                    <p>Immersive cyberpunk-inspired interface designed for elite interaction.</p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- CHAT PANEL -->
+    <section class="chat-panel">
+
+        <div class="chat-header">
+
+            <div>
+                <div class="chat-title">CYMOR AI</div>
+                <div class="chat-subtitle">Neural Intelligence Interface</div>
+            </div>
+
+            <div class="live-badge">
+                LIVE
+            </div>
+
+        </div>
+
+        <!-- QUICK ACTIONS -->
+        <div class="quick-actions">
+
+            <button onclick="setPrompt('Help me code a futuristic website')">
+                💻 CODE
+            </button>
+
+            <button onclick="setPrompt('Write something motivational')">
+                🚀 MOTIVATE
+            </button>
+
+            <button onclick="setPrompt('Help me plan my future')">
+                📅 PLAN
+            </button>
+
+            <button onclick="setPrompt('Explain artificial intelligence')">
+                🧠 AI
+            </button>
+
+        </div>
+
+        <!-- CHAT -->
+        <div class="chat-box" id="chatBox">
+
+            <div class="message bot">
+                ⚡ Welcome back commander.<br><br>
+                CymorAI neural systems are online and awaiting your instructions.
+            </div>
+
+        </div>
+
+        <!-- INPUT -->
+        <div class="input-section">
+
+            <input
+                type="text"
+                id="userInput"
+                placeholder="Transmit your message..."
+                onkeypress="handleKey(event)"
+            >
+
+            <button class="send-btn" onclick="sendMessage()">
+                ➤
+            </button>
+
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            Engineered by <span>Legendary Smiley Cymor</span><br>
+            © CymorTechServices 2026
+        </div>
+
+    </section>
+
 </div>
 
 <script src="script.js"></script>
+
 </body>
 </html>
