@@ -1,86 +1,164 @@
-import { auth, db } from "./firebase.js";
-import { 
-    createUserWithEmailAndPassword, 
-    signInWithEmailAndPassword, 
-    GoogleAuthProvider, 
+// ======================================
+// CYMOR AI AUTH SYSTEM
+// FIREBASE AUTH + FIRESTORE
+// ======================================
+
+import {
+    auth,
+    db,
+    provider
+} from "./firebase.js";
+
+import {
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
     signInWithPopup,
     updateProfile
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// =============================================
-// SIGN UP LOGIC (EMAIL/PASSWORD)
-// =============================================
-export const signUp = async (email, password, name) => {
+import {
+    doc,
+    setDoc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// ======================================
+// SIGN UP
+// ======================================
+export async function signUp(
+    email,
+    password,
+    name
+) {
+
     try {
-        const res = await createUserWithEmailAndPassword(auth, email, password);
-        const user = res.user;
 
-        // 1. Update the Firebase Auth Profile (used by displayNames)
-        await updateProfile(user, { 
-            displayName: name || "Explorer" 
+        // CREATE USER
+        const userCredential =
+            await createUserWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
+
+        const user =
+            userCredential.user;
+
+        // UPDATE DISPLAY NAME
+        await updateProfile(user, {
+            displayName: name
         });
 
-        // 2. Create user entry in Firestore
-        await setDoc(doc(db, "users", user.uid), {
-            uid: user.uid,
-            name: name || "Explorer",
-            email: email,
-            role: "user",
-            createdAt: serverTimestamp(),
-            lastLogin: serverTimestamp()
-        });
+        // SAVE USER DATA
+        await setDoc(
+            doc(db, "users", user.uid),
+            {
+                uid: user.uid,
+                name: name || "User",
+                email: user.email,
+                createdAt: new Date(),
+                role: "user"
+            }
+        );
+
+        console.log(
+            "✅ Signup successful:",
+            user.email
+        );
 
         return user;
+
     } catch (error) {
-        console.error("Signup Error:", error.code);
+
+        console.error(
+            "🔥 Signup Error:",
+            error
+        );
+
         throw error;
     }
-};
+}
 
-// =============================================
-// LOGIN LOGIC (EMAIL/PASSWORD)
-// =============================================
-export const loginEmail = async (email, password) => {
+// ======================================
+// LOGIN USER
+// ======================================
+export async function loginUser(
+    email,
+    password
+) {
+
     try {
-        const res = await signInWithEmailAndPassword(auth, email, password);
-        
-        // Update last login timestamp in Firestore
-        await setDoc(doc(db, "users", res.user.uid), {
-            lastLogin: serverTimestamp()
-        }, { merge: true });
 
-        return res.user;
+        const userCredential =
+            await signInWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
+
+        console.log(
+            "✅ Login successful:",
+            userCredential.user.email
+        );
+
+        return userCredential.user;
+
     } catch (error) {
-        console.error("Login Error:", error.code);
+
+        console.error(
+            "🔥 Login Error:",
+            error
+        );
+
         throw error;
     }
-};
+}
 
-// =============================================
-// GOOGLE LOGIN LOGIC
-// =============================================
-export const googleLogin = async () => {
+// ======================================
+// GOOGLE LOGIN
+// ======================================
+export async function googleLogin() {
+
     try {
-        const provider = new GoogleAuthProvider();
-        // Force account selection to prevent auto-logging into the wrong account
-        provider.setCustomParameters({ prompt: 'select_account' });
 
-        const res = await signInWithPopup(auth, provider);
-        const user = res.user;
+        const result =
+            await signInWithPopup(
+                auth,
+                provider
+            );
 
-        // Create or Update user in Firestore (Merge keeps existing data)
-        await setDoc(doc(db, "users", user.uid), {
-            uid: user.uid,
-            name: user.displayName,
-            email: user.email,
-            photoURL: user.photoURL, // Store their profile pic too
-            lastLogin: serverTimestamp()
-        }, { merge: true });
+        const user =
+            result.user;
+
+        // SAVE USER TO FIRESTORE
+        await setDoc(
+            doc(db, "users", user.uid),
+            {
+                uid: user.uid,
+                name: user.displayName || "Google User",
+                email: user.email,
+                photo: user.photoURL || "",
+                createdAt: new Date(),
+                role: "user"
+            },
+            {
+                merge: true
+            }
+        );
+
+        console.log(
+            "✅ Google login successful:",
+            user.email
+        );
 
         return user;
+
     } catch (error) {
-        console.error("Google Auth Error:", error.code);
+
+        console.error(
+            "🔥 Google Login Error:",
+            error
+        );
+
         throw error;
     }
-};
+}
