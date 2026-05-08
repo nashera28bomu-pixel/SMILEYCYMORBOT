@@ -20,7 +20,6 @@
             z-index: 9999;
         }
 
-        /* Glass card styling */
         .login-box {
             width: 360px;
             padding: 30px;
@@ -83,11 +82,11 @@
             gap: 10px;
             padding: 15px 10px;
             overflow-x: auto;
-            scrollbar-width: none; /* Hide scrollbar for Firefox */
+            scrollbar-width: none; 
         }
         
         .suggestion-chips::-webkit-scrollbar {
-            display: none; /* Hide scrollbar for Chrome/Safari */
+            display: none; 
         }
 
         .chip {
@@ -109,7 +108,7 @@
             transform: translateY(-2px);
         }
 
-        /* Hidden by default until login */
+        /* Hidden by default until script.js handles the auth state */
         .main-container {
             display: none; 
         }
@@ -127,10 +126,10 @@
         <input type="email" id="email" placeholder="Email Address">
         <input type="password" id="password" placeholder="Password">
 
-        <button onclick="signup()">Create Account</button>
-        <button onclick="login()">Login</button>
+        <button onclick="handleSignup()">Create Account</button>
+        <button onclick="handleLogin()">Login</button>
 
-        <button class="google-btn" onclick="googleLogin()">
+        <button class="google-btn" onclick="handleGoogleLogin()">
             Continue with Google
         </button>
     </div>
@@ -157,80 +156,50 @@
         </div>
 
         <div class="suggestion-chips">
-            <button class="chip" onclick="setPrompt('💻 CODE')">💻 CODE</button>
-            <button class="chip" onclick="setPrompt('🚀 MOTIVATE')">🚀 MOTIVATE</button>
-            <button class="chip" onclick="setPrompt('📅 PLAN')">📅 PLAN</button>
-            <button class="chip" onclick="setPrompt('🧠 AI')">🧠 AI</button>
+            <button class="chip" onclick="window.setPrompt('💻 CODE')">💻 CODE</button>
+            <button class="chip" onclick="window.setPrompt('🚀 MOTIVATE')">🚀 MOTIVATE</button>
+            <button class="chip" onclick="window.setPrompt('📅 PLAN')">📅 PLAN</button>
+            <button class="chip" onclick="window.setPrompt('🧠 AI')">🧠 AI</button>
         </div>
 
         <div class="chat-box" id="chatBox"></div>
 
         <div class="input-section">
-            <input type="text" id="userInput" placeholder="Transmit your message..." onkeydown="handleKey(event)">
-            <button onclick="sendMessage()" id="sendBtn">➤</button>
+            <input type="text" id="userInput" placeholder="Transmit your message..." onkeydown="window.handleKey(event)">
+            <button onclick="window.sendMessage()" id="sendBtn">➤</button>
         </div>
     </section>
 </div>
 
 <script type="module">
-    import { signUp as fbSignUp, loginEmail as fbLogin, googleLogin as fbGoogleLogin } from "./auth.js";
+    import { signUp, loginEmail, googleLogin } from "./auth.js";
 
-    /* CREATE ACCOUNT */
-    window.signup = async function () {
+    // Attach to window so HTML buttons can see them
+    window.handleSignup = async () => {
         const name = document.getElementById("name").value;
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
-
-        if (!email || !password) return alert("Neural Link Denied: Missing Credentials");
-
         try {
-            const user = await fbSignUp(email, password, name);
-            enterApp(name || user.email);
-        } catch (err) {
-            console.error(err);
-            alert("Signup Failed: " + err.message);
-        }
+            await signUp(email, password, name);
+        } catch (err) { alert(err.message); }
     };
 
-    /* LOGIN */
-    window.login = async function () {
+    window.handleLogin = async () => {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
-
-        if (!email || !password) return alert("Credentials Required");
-
         try {
-            const user = await fbLogin(email, password);
-            enterApp(user.displayName || user.email);
-        } catch (err) {
-            console.error(err);
-            alert("Access Denied: " + err.message);
-        }
+            await loginEmail(email, password);
+        } catch (err) { alert(err.message); }
     };
 
-    /* CONTINUE WITH GOOGLE */
-    window.googleLogin = async function () {
+    window.handleGoogleLogin = async () => {
         try {
-            const user = await fbGoogleLogin();
-            enterApp(user.displayName || "Explorer");
-        } catch (err) {
-            console.error(err);
-            alert("Google Authentication Failed");
-        }
+            await googleLogin();
+        } catch (err) { alert("Google Auth Failed"); }
     };
-
-    /* UI TRANSITION */
-    function enterApp(name) {
-        document.getElementById("loginScreen").style.display = "none";
-        document.getElementById("app").style.display = "flex";
-        document.getElementById("userName").innerText = name;
-        
-        // Focus the chat input automatically
-        setTimeout(() => document.getElementById("userInput").focus(), 500);
-    }
 </script>
 
-<script src="script.js"></script>
+<script type="module" src="script.js"></script>
 
 </body>
 </html>
