@@ -1,4 +1,5 @@
 require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
@@ -6,88 +7,165 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// --- MIDDLEWARE ---
-app.use(cors()); 
+// ===============================
+// MIDDLEWARE
+// ===============================
+app.use(cors());
 app.use(express.json());
-app.use(express.static(".")); 
+app.use(express.static("."));
 
+// ===============================
+// API KEY CHECK
+// ===============================
 if (!process.env.GEMINI_API_KEY) {
-    console.error("❌ CRITICAL: GEMINI_API_KEY is missing in Environment Variables");
+    console.error("❌ GEMINI_API_KEY missing in environment variables");
 }
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-/**
- * FIX: Using "gemini-1.5-flash" (Stable) 
- * This avoids the 404 errors associated with the "-latest" alias 
- * while maintaining broad regional compatibility.
- */
-const model = genAI.getGenerativeModel({ 
-    model: "gemini-1.5-flash", 
-    systemInstruction: `You are CymorAI, an intelligent, friendly, and slightly futuristic AI assistant.
-- Be clear, helpful, and engaging.
-- Keep answers concise but powerful.
-- Sound confident and smart.
-- Occasionally feel human-like.`
+// ===============================
+// UPDATED GEMINI MODEL
+// ===============================
+const model = genAI.getGenerativeModel({
+    model: "gemini-2.0-flash",
+
+    systemInstruction: `
+You are CymorAI — an elite futuristic AI assistant.
+
+Rules:
+- Be intelligent and confident.
+- Be friendly and engaging.
+- Keep answers concise but useful.
+- Sound modern and premium.
+- Never mention being an AI model unless necessary.
+- Add slight futuristic personality.
+`
 });
 
-// --- ROUTES ---
+// ===============================
+// CHAT ROUTE
+// ===============================
 app.post("/chat", async (req, res) => {
-    const { message, history = [] } = req.body;
-    
-    console.log(`📩 Incoming: "${message}"`);
 
     try {
+
+        const { message, history = [] } = req.body;
+
+        console.log("📩 Incoming Message:", message);
+
+        // -------------------------------
+        // VALIDATION
+        // -------------------------------
         if (!process.env.GEMINI_API_KEY) {
-            return res.status(500).json({ reply: "Configuration error: API Key missing." });
+            return res.status(500).json({
+                reply: "⚠️ Missing Gemini API Key."
+            });
         }
 
-        if (!message || message.trim().length === 0) {
-            return res.status(400).json({ reply: "Message cannot be empty." });
+        if (!message || message.trim() === "") {
+            return res.status(400).json({
+                reply: "⚠️ Please enter a message."
+            });
         }
 
-        // Initialize chat with history
-        const chat = model.startChat({ 
-            history: history,
+        // -------------------------------
+        // START CHAT
+        // -------------------------------
+        const chat = model.startChat({
+            history,
+
             generationConfig: {
-                maxOutputTokens: 1000,
-                temperature: 0.7,
-            },
+                maxOutputTokens: 1200,
+                temperature: 0.8,
+                topP: 0.95,
+                topK: 40
+            }
         });
 
-        // Sending the message to Gemini
+        // -------------------------------
+        // SEND MESSAGE
+        // -------------------------------
         const result = await chat.sendMessage(message);
-        const response = await result.response;
+
+        const response = result.response;
+
         const text = response.text();
 
-        console.log("✅ AI Response generated successfully");
-        
-        // Appending the requested signature to every reply
-        res.json({ 
-            reply: `${text}\n\n— Powered by CymorAi`
+        console.log("✅ Response Generated");
+
+        // -------------------------------
+        // RETURN RESPONSE
+        // -------------------------------
+        res.json({
+            reply: `${text}\n\n— Powered by CymorAI`
         });
 
     } catch (error) {
-        console.error("🔥 Server Error Details:", error);
-        
-        let errorMessage = "CymorAI is having trouble connecting. Try again.";
-        
-        // Specific error handling for the 404/Regional issues seen in logs
-        if (error.message.includes("404") || error.message.includes("not found")) {
-            errorMessage = "Model version mismatch. System updating...";
-        } else if (error.message.includes("location") || error.message.includes("supported")) {
-            errorMessage = "CymorAI is currently restricted in this server's region.";
-        } else if (error.message.includes("API_KEY_INVALID")) {
-            errorMessage = "System Error: Invalid API Key.";
+
+        console.error("🔥 FULL SERVER ERROR:");
+        console.error(error);
+
+        let errorMessage =
+            "⚠️ CymorAI encountered a temporary issue.";
+
+        // -------------------------------
+        // ERROR HANDLING
+        // -------------------------------
+        if (
+            error.message?.includes("404") ||
+            error.message?.includes("not found")
+        ) {
+            errorMessage =
+                "⚠️ AI model unavailable. System updating...";
         }
 
-        res.status(500).json({ reply: errorMessage });
+        else if (
+            error.message?.includes("API_KEY_INVALID")
+        ) {
+            errorMessage =
+                "⚠️ Invalid Gemini API Key.";
+        }
+
+        else if (
+            error.message?.includes("quota")
+        ) {
+            errorMessage =
+                "⚠️ API quota exceeded. Try again later.";
+        }
+
+        else if (
+            error.message?.includes("network")
+        ) {
+            errorMessage =
+                "⚠️ Network issue detected.";
+        }
+
+        res.status(500).json({
+            reply: errorMessage
+        });
     }
 });
 
-// Health check for Render monitoring
-app.get('/health', (req, res) => res.status(200).send('Systems Online'));
+// ===============================
+// HEALTH CHECK
+// ===============================
+app.get("/health", (req, res) => {
+    res.status(200).json({
+        status: "online",
+        ai: "CymorAI",
+        model: "gemini-2.0-flash"
+    });
+});
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 CymorAI active on port ${PORT}`);
+// ===============================
+// START SERVER
+// ===============================
+app.listen(PORT, "0.0.0.0", () => {
+
+    console.log(`
+╔══════════════════════════════╗
+║      🚀 CYMORAI ONLINE       ║
+║      Port: ${PORT}
+╚══════════════════════════════╝
+`);
 });
