@@ -121,17 +121,6 @@
 </div>
 
 <div class="main-container" id="app" style="display:none;">
-    
-    <section class="hero-panel">
-        <div class="hero-content">
-            <h1 style="font-family:'Orbitron';">CYMOR <span style="color:#ff0033;">AI</span></h1>
-            <h2 style="font-size: 14px; opacity: 0.7;">INTELLIGENT NEXUS</h2>
-            <p class="hero-description" style="margin-top:20px;">
-                Welcome, <span id="userName" style="color:#ff0033;">User</span>.
-            </p>
-        </div>
-    </section>
-
     <section class="chat-panel">
         <div class="chat-header" style="display: flex; justify-content: space-between; align-items: center;">
             <div>
@@ -152,7 +141,7 @@
             </div>
 
         <div class="input-section">
-            <input type="text" id="userInput" placeholder="Transmit your message..." onkeydown="window.handleKey(event)">
+            <input type="text" id="userInput" placeholder="Ask Cymor Ai..." onkeydown="window.handleKey(event)">
             <button onclick="window.sendMessage()" id="sendBtn">➤</button>
         </div>
     </section>
