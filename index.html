@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CYMOR AI | Intelligent Nexus</title>
 
     <link rel="stylesheet" href="style.css">
@@ -21,12 +21,13 @@
         }
 
         .login-box {
-            width: 360px;
+            width: 90%;
+            max-width: 360px;
             padding: 30px;
             border-radius: 18px;
-            background: rgba(0, 0, 0, 0.65);
+            background: rgba(10, 15, 30, 0.7);
             border: 1px solid rgba(255, 0, 51, 0.3);
-            box-shadow: 0 0 30px rgba(255, 0, 51, 0.3);
+            box-shadow: 0 0 30px rgba(255, 0, 51, 0.2);
             backdrop-filter: blur(14px);
             text-align: center;
         }
@@ -36,42 +37,68 @@
             color: #ff0033;
             letter-spacing: 3px;
             margin-bottom: 10px;
-            text-shadow: 0 0 15px red;
+            text-shadow: 0 0 15px rgba(255, 0, 51, 0.5);
         }
 
         .login-box input {
             width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            background: black;
-            border: 1px solid #ff0033;
-            border-radius: 10px;
+            padding: 14px;
+            margin: 8px 0;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 0, 51, 0.4);
+            border-radius: 12px;
             color: white;
             outline: none;
-            box-sizing: border-box;
         }
 
         .login-box button {
             width: 100%;
             padding: 12px;
             margin-top: 10px;
-            background: linear-gradient(45deg, #ff0033, #660000);
+            background: linear-gradient(45deg, #ff0033, #8b0000);
             border: none;
             color: white;
             font-weight: bold;
             cursor: pointer;
-            border-radius: 10px;
+            border-radius: 12px;
             transition: 0.3s;
         }
 
-        .login-box button:hover {
-            transform: scale(1.02);
-            filter: brightness(1.2);
+        /* Added Suggestion Chips Style */
+        .suggestion-chips {
+            display: flex;
+            gap: 10px;
+            padding: 10px 20px;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none;
+            background: rgba(10, 14, 20, 0.4);
+        }
+        .suggestion-chips::-webkit-scrollbar { display: none; }
+        
+        .chip {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 255, 170, 0.2);
+            color: #e2e8f0;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .chip:hover {
+            background: rgba(0, 255, 170, 0.1);
+            border-color: #00ffaa;
         }
 
-        .google-btn {
-            background: black !important;
-            border: 1px solid #ff0033 !important;
+        .live-badge {
+            background: rgba(255, 0, 51, 0.1);
+            color: #ff0033;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            border: 1px solid #ff0033;
         }
     </style>
 </head>
@@ -89,7 +116,7 @@
 
         <button onclick="window.handleSignup()">Create Account</button>
         <button onclick="window.handleLogin()">Login</button>
-        <button class="google-btn" onclick="window.handleGoogleLogin()">Continue with Google</button>
+        <button style="background:transparent; border: 1px solid #444;" onclick="window.handleGoogleLogin()">Continue with Google</button>
     </div>
 </div>
 
@@ -97,19 +124,19 @@
     
     <section class="hero-panel">
         <div class="hero-content">
-            <h1>CYMOR <span>AI</span></h1>
-            <h2>INTELLIGENT NEXUS</h2>
-            <p class="hero-description">
-                Welcome, <span id="userName" style="color:#ff0033;">User</span>. CymorAI is ready.
+            <h1 style="font-family:'Orbitron';">CYMOR <span style="color:#ff0033;">AI</span></h1>
+            <h2 style="font-size: 14px; opacity: 0.7;">INTELLIGENT NEXUS</h2>
+            <p class="hero-description" style="margin-top:20px;">
+                Welcome, <span id="userName" style="color:#ff0033;">User</span>.
             </p>
         </div>
     </section>
 
     <section class="chat-panel">
-        <div class="chat-header">
+        <div class="chat-header" style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-                <div class="chat-title">CYMOR AI</div>
-                <div class="chat-subtitle">Neural Intelligence Interface</div>
+                <div class="chat-title" style="font-family:'Orbitron'; font-weight: bold; color: #00ffaa;">CYMOR AI</div>
+                <div class="chat-subtitle" style="font-size: 10px; opacity: 0.6;">Neural Intelligence Interface</div>
             </div>
             <div class="live-badge">LIVE</div>
         </div>
@@ -134,7 +161,6 @@
 <script type="module">
     import { signUp, loginEmail, googleLogin } from "./auth.js";
 
-    // Global bridge for buttons
     window.handleSignup = async () => {
         const name = document.getElementById("name").value;
         const email = document.getElementById("email").value;
