@@ -1,6 +1,5 @@
 // =============================================
-// CYMOR AI ELITE SCRIPT
-// FIREBASE MEMORY + STABLE UI FIX
+// CYMOR AI ELITE SCRIPT - FULL INTEGRATION
 // =============================================
 
 import { auth, db } from "./firebase.js";
@@ -11,11 +10,12 @@ import {
     getDocs,
     query,
     orderBy,
-    limit
+    limit,
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // =============================================
-// API URL
+// API CONFIGURATION
 // =============================================
 const API_URL =
     window.location.hostname === "localhost" ||
@@ -24,136 +24,112 @@ const API_URL =
         : "/chat";
 
 // =============================================
-// DOM (SAFE INIT)
+// GLOBAL STATE & DOM
 // =============================================
 let chatBox, userInput, sendBtn;
 let currentUser = null;
 
-// =============================================
-// DOM READY CHECK (IMPORTANT FIX YOU ADDED)
-// =============================================
+// Ensure DOM is ready before assigning elements
 window.addEventListener("DOMContentLoaded", () => {
-
     chatBox = document.getElementById("chatBox");
     userInput = document.getElementById("userInput");
     sendBtn = document.getElementById("sendBtn");
-
-    if (!chatBox || !userInput) {
-        console.error("Chat UI not loaded properly");
-        return;
-    }
 });
 
 // =============================================
-// AUTH LISTENER
+// AUTH LISTENER & UI TRANSITION
 // =============================================
 auth.onAuthStateChanged(async (user) => {
-
     if (user) {
-
         currentUser = user;
+        console.log("🔥 Neural Link Established:", user.email);
 
-        console.log("🔥 Logged in:", user.email);
-
+        // UI Transitions
         document.getElementById("loginScreen").style.display = "none";
         document.getElementById("app").style.display = "flex";
 
-        const firstName =
-            user.displayName
-                ? user.displayName.split(" ")[0]
-                : "User";
-
+        // Set User Name
+        const firstName = user.displayName ? user.displayName.split(" ")[0] : "Explorer";
         document.getElementById("userName").innerText = firstName;
 
+        // Load Chat
         await loadChatHistory();
 
+        // Fix: Auto-welcome only if chat is fresh
         if (chatBox && chatBox.children.length === 0) {
-            showWelcome(firstName);
+            sendWelcome(firstName);
         }
-
     } else {
-
         document.getElementById("loginScreen").style.display = "flex";
         document.getElementById("app").style.display = "none";
     }
 });
 
 // =============================================
-// WELCOME MESSAGE
+// WELCOME MESSAGE LOGIC
 // =============================================
-function showWelcome(name) {
-
-    const msg = createMessage("", "bot");
-
-    typeWriter(
-        msg,
-        `👋 Hi ${name}, how may I help you today?`,
-        18
-    );
+function sendWelcome(name) {
+    const welcomeMsg = createMessage("", "bot");
+    typeWriter(welcomeMsg, `Hi ${name}! 🚀 How may I be of help to you today?`, 30);
 }
 
 // =============================================
-// LOAD HISTORY
+// DATABASE OPERATIONS
 // =============================================
 async function loadChatHistory() {
-
     if (!currentUser || !chatBox) return;
-
     chatBox.innerHTML = "";
 
-    const chatRef =
-        collection(db, "users", currentUser.uid, "chats");
+    try {
+        const chatRef = collection(db, "users", currentUser.uid, "chats");
+        const q = query(chatRef, orderBy("timestamp", "asc"), limit(50));
+        const snapshot = await getDocs(q);
 
-    const q =
-        query(chatRef, orderBy("timestamp"), limit(50));
-
-    const snapshot = await getDocs(q);
-
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        createMessage(data.text, data.sender);
-    });
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            createMessage(data.text, data.sender);
+        });
+        scrollToBottom();
+    } catch (err) {
+        console.error("History Error:", err);
+    }
 }
 
-// =============================================
-// SAVE MESSAGE
-// =============================================
 async function saveMessage(text, sender) {
-
     if (!currentUser) return;
-
-    const chatRef =
-        collection(db, "users", currentUser.uid, "chats");
-
-    await addDoc(chatRef, {
-        text,
-        sender,
-        timestamp: new Date()
-    });
+    try {
+        const chatRef = collection(db, "users", currentUser.uid, "chats");
+        await addDoc(chatRef, {
+            text,
+            sender,
+            timestamp: serverTimestamp()
+        });
+    } catch (err) {
+        console.error("Save Error:", err);
+    }
 }
 
 // =============================================
-// SEND MESSAGE (FIXED SAFE VERSION)
+// CORE CHAT LOGIC
 // =============================================
 async function sendMessage() {
-
     if (!userInput || !chatBox || !currentUser) return;
 
     const message = userInput.value.trim();
     if (!message) return;
 
+    // Lock UI
     userInput.disabled = true;
     sendBtn.disabled = true;
 
+    // Display User Message
     createMessage(message, "user");
     await saveMessage(message, "user");
-
     userInput.value = "";
 
     const thinking = createThinkingMessage();
 
     try {
-
         const response = await fetch(API_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -164,26 +140,18 @@ async function sendMessage() {
         });
 
         const data = await response.json();
-
         thinking.remove();
 
-        if (!response.ok) {
-            throw new Error(data.reply || "Connection failed");
-        }
+        if (!response.ok) throw new Error(data.reply || "Neural Link Interrupted");
 
         const botMsg = createMessage("", "bot");
-        typeWriter(botMsg, data.reply, 8);
-
+        typeWriter(botMsg, data.reply, 15);
         await saveMessage(data.reply, "bot");
 
     } catch (error) {
-
         thinking.remove();
-
-        createMessage(`⚠️ ${error.message}`, "bot");
-
+        createMessage(`⚠️ System Error: ${error.message}`, "bot");
     } finally {
-
         userInput.disabled = false;
         sendBtn.disabled = false;
         userInput.focus();
@@ -191,74 +159,31 @@ async function sendMessage() {
 }
 
 // =============================================
-// CREATE MESSAGE
+// UI HELPERS (BUBBLES & TYPEWRITER)
 // =============================================
 function createMessage(text, sender) {
-
     const msg = document.createElement("div");
-    msg.className = `message ${sender}`;
+    msg.className = `message ${sender}`; // Uses your CSS classes
     msg.innerHTML = text;
-
-    msg.style.padding = "14px";
-    msg.style.margin = "12px";
-    msg.style.borderRadius = "16px";
-    msg.style.lineHeight = "1.6";
-    msg.style.animation = "fadeIn 0.3s ease";
-
-    if (sender === "user") {
-
-        msg.style.background =
-            "linear-gradient(45deg,#ff0033,#660000)";
-        msg.style.color = "white";
-        msg.style.marginLeft = "auto";
-        msg.style.maxWidth = "80%";
-
-    } else {
-
-        msg.style.background =
-            "rgba(255,255,255,0.05)";
-        msg.style.border =
-            "1px solid rgba(255,0,51,0.2)";
-        msg.style.maxWidth = "85%";
-    }
 
     chatBox.appendChild(msg);
     scrollToBottom();
-
     return msg;
 }
 
-// =============================================
-// THINKING MESSAGE
-// =============================================
 function createThinkingMessage() {
-
     const div = document.createElement("div");
     div.className = "message bot thinking";
-
-    div.innerHTML = `
-        <div style="display:flex;align-items:center;gap:10px;">
-            <div class="brain-loader"></div>
-            🧠 CymorAI is thinking...
-        </div>
-    `;
-
+    div.innerHTML = `🧠 CymorAI is processing...`;
     chatBox.appendChild(div);
     scrollToBottom();
-
     return div;
 }
 
-// =============================================
-// TYPEWRITER
-// =============================================
-function typeWriter(element, text, speed = 10) {
-
+function typeWriter(element, text, speed = 20) {
     let i = 0;
     element.innerHTML = "";
-
     function type() {
-
         if (i < text.length) {
             element.innerHTML += text.charAt(i);
             i++;
@@ -266,38 +191,27 @@ function typeWriter(element, text, speed = 10) {
             setTimeout(type, speed);
         }
     }
-
     type();
 }
 
-// =============================================
-// SCROLL
-// =============================================
+// Updated Scroll Logic for mobile/smoothness
 function scrollToBottom() {
-    chatBox.scrollTo({
-        top: chatBox.scrollHeight,
-        behavior: "smooth"
-    });
+    setTimeout(() => {
+        if (chatBox) {
+            chatBox.scrollTo({
+                top: chatBox.scrollHeight,
+                behavior: "smooth"
+            });
+        }
+    }, 100);
 }
 
 // =============================================
-// KEY HANDLER
-// =============================================
-function handleKey(event) {
-    if (event.key === "Enter") sendMessage();
-}
-
-// =============================================
-// PROMPT
-// =============================================
-function setPrompt(text) {
-    userInput.value = text;
-    userInput.focus();
-}
-
-// =============================================
-// GLOBAL EXPORTS
+// GLOBAL EVENT EXPORTS
 // =============================================
 window.sendMessage = sendMessage;
-window.setPrompt = setPrompt;
-window.handleKey = handleKey;
+window.handleKey = (e) => { if (e.key === "Enter") sendMessage(); };
+window.setPrompt = (text) => { 
+    userInput.value = text; 
+    userInput.focus(); 
+};
