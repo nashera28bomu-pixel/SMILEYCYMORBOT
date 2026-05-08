@@ -1,296 +1,40 @@
 // =============================================
-// CYMOR AI ELITE SCRIPT
-// Optimized for GROQ Backend
+// CYMOR AI - FIREBASE CORE CONNECTION
 // =============================================
 
-// =============================================
-// API URL
-// =============================================
-const API_URL =
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1"
-
-        ? "http://localhost:3000/chat"
-
-        : "/chat";
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 // =============================================
-// DOM ELEMENTS
+// FIREBASE CONFIG
 // =============================================
-const chatBox =
-    document.getElementById("chatBox");
-
-const userInput =
-    document.getElementById("userInput");
-
-// =============================================
-// QUICK PROMPTS
-// =============================================
-function setPrompt(text) {
-
-    userInput.value = text;
-
-    userInput.focus();
-}
+const firebaseConfig = {
+  apiKey: "AIzaSyC48m4Mmksa8Fpx6OGDU8tAUIlCCqOE8Js",
+  authDomain: "cymorai.firebaseapp.com",
+  projectId: "cymorai",
+  storageBucket: "cymorai.appspot.com",
+  messagingSenderId: "718791176464",
+  appId: "1:718791176464:web:159e5233fe709c518c3595"
+};
 
 // =============================================
-// ENTER KEY SUPPORT
+// INITIALIZE FIREBASE APP
 // =============================================
-function handleKey(event) {
-
-    if (event.key === "Enter") {
-
-        sendMessage();
-    }
-}
+const app = initializeApp(firebaseConfig);
 
 // =============================================
-// CREATE MESSAGE
+// SERVICES EXPORTS
 // =============================================
-function createMessage(text, sender) {
-
-    const message =
-        document.createElement("div");
-
-    message.className =
-        `message ${sender}`;
-
-    message.innerHTML = text;
-
-    chatBox.appendChild(message);
-
-    scrollToBottom();
-
-    return message;
-}
+export const auth = getAuth(app);
+export const db = getFirestore(app);
 
 // =============================================
-// AUTO SCROLL
+// CYMOR STATUS LOG
 // =============================================
-function scrollToBottom() {
-
-    chatBox.scrollTo({
-
-        top: chatBox.scrollHeight,
-
-        behavior: "smooth"
-    });
-}
-
-// =============================================
-// TYPEWRITER EFFECT
-// =============================================
-function typeWriter(element, text, speed = 12) {
-
-    let index = 0;
-
-    element.innerHTML = "";
-
-    function type() {
-
-        if (index < text.length) {
-
-            element.innerHTML +=
-                text.charAt(index);
-
-            index++;
-
-            scrollToBottom();
-
-            setTimeout(type, speed);
-        }
-    }
-
-    type();
-}
-
-// =============================================
-// CYMOR THINKING MESSAGE
-// =============================================
-function createThinkingMessage() {
-
-    const thinking =
-        document.createElement("div");
-
-    thinking.className =
-        "message bot thinking";
-
-    thinking.innerHTML = `
-        <span class="thinking-text">
-            ⚡ CymorAI neural engine processing...
-        </span>
-    `;
-
-    chatBox.appendChild(thinking);
-
-    scrollToBottom();
-
-    return thinking;
-}
-
-// =============================================
-// SEND MESSAGE
-// =============================================
-async function sendMessage() {
-
-    const message =
-        userInput.value.trim();
-
-    if (!message) return;
-
-    // =========================================
-    // DISABLE INPUT TEMPORARILY
-    // =========================================
-    userInput.disabled = true;
-
-    // =========================================
-    // SHOW USER MESSAGE
-    // =========================================
-    createMessage(message, "user");
-
-    // =========================================
-    // CLEAR INPUT
-    // =========================================
-    userInput.value = "";
-
-    // =========================================
-    // SHOW THINKING
-    // =========================================
-    const thinkingMessage =
-        createThinkingMessage();
-
-    try {
-
-        console.log(
-            "📤 Sending to:",
-            API_URL
-        );
-
-        // =====================================
-        // FETCH REQUEST
-        // =====================================
-        const response =
-            await fetch(API_URL, {
-
-                method: "POST",
-
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
-
-                body: JSON.stringify({
-                    message
-                })
-            });
-
-        const data =
-            await response.json();
-
-        // =====================================
-        // REMOVE THINKING
-        // =====================================
-        thinkingMessage.remove();
-
-        // =====================================
-        // ERROR CHECK
-        // =====================================
-        if (!response.ok) {
-
-            throw new Error(
-                data.reply ||
-                "Unknown server error."
-            );
-        }
-
-        // =====================================
-        // CREATE BOT MESSAGE
-        // =====================================
-        const botMessage =
-            createMessage("", "bot");
-
-        // =====================================
-        // TYPE RESPONSE
-        // =====================================
-        typeWriter(
-            botMessage,
-            data.reply,
-            8
-        );
-
-    } catch (error) {
-
-        console.error(
-            "❌ CYMOR ERROR:",
-            error
-        );
-
-        // REMOVE THINKING
-        thinkingMessage.remove();
-
-        // SHOW ERROR
-        createMessage(
-            `
-            ⚠️ ${error.message}
-            `,
-            "bot"
-        );
-
-    } finally {
-
-        // =====================================
-        // ENABLE INPUT AGAIN
-        // =====================================
-        userInput.disabled = false;
-
-        userInput.focus();
-    }
-}
-
-// =============================================
-// STARTUP ANIMATION
-// =============================================
-window.addEventListener("load", () => {
-
-    console.log(`
+console.log(`
 ╔══════════════════════════════╗
-║       CYMOR AI ACTIVE        ║
-║   Neural Interface Loaded    ║
+║      CYMOR FIREBASE READY     ║
+║   Auth + Firestore ONLINE     ║
 ╚══════════════════════════════╝
 `);
-
-    // Small boot effect
-    setTimeout(() => {
-
-        createMessage(
-            `
-            🚀 Neural systems initialized.<br>
-            ⚡ Groq intelligence core connected.<br>
-            🧠 CymorAI ready for interaction.
-            `,
-            "bot"
-        );
-
-    }, 1200);
-});
-
-// =============================================
-// CYMOR BACKGROUND EFFECT
-// =============================================
-setInterval(() => {
-
-    const words =
-        document.querySelectorAll(
-            ".floating-words span"
-        );
-
-    words.forEach(word => {
-
-        const randomX =
-            Math.random() * 100;
-
-        word.style.left =
-            randomX + "%";
-    });
-
-}, 8000);
