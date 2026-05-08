@@ -12,9 +12,7 @@
 
     <style>
 
-        /* =========================
-           LOGIN OVERLAY
-        ========================= */
+        /* LOGIN SCREEN */
         .login-screen{
             position:fixed;
             inset:0;
@@ -60,11 +58,6 @@
             color:white;
             outline:none;
             box-sizing:border-box;
-            font-family:'Outfit',sans-serif;
-        }
-
-        .login-box input:focus{
-            box-shadow:0 0 15px rgba(255,0,51,0.4);
         }
 
         .login-box button{
@@ -77,14 +70,6 @@
             font-weight:bold;
             cursor:pointer;
             border-radius:10px;
-            transition:0.25s;
-            font-family:'Orbitron',sans-serif;
-            box-shadow:0 0 15px rgba(255,0,0,0.4);
-        }
-
-        .login-box button:hover{
-            transform:scale(1.03);
-            background:linear-gradient(45deg,#ff1a4d,#7a0000);
         }
 
         .google-btn{
@@ -92,55 +77,12 @@
             border:1px solid #ff0033 !important;
         }
 
-        /* =========================
-           MAIN APP
-        ========================= */
-        .main-container{
-            display:none;
-        }
-
-        /* =========================
-           SUGGESTION CHIPS
-        ========================= */
-        .suggestion-chips{
-            display:flex;
-            gap:10px;
-            overflow-x:auto;
-            padding:12px;
-            scrollbar-width:none;
-        }
-
-        .suggestion-chips::-webkit-scrollbar{
-            display:none;
-        }
-
-        .chip{
-            border:none;
-            background:rgba(255,255,255,0.05);
-            color:white;
-            padding:10px 16px;
-            border-radius:30px;
-            cursor:pointer;
-            white-space:nowrap;
-            font-family:'Orbitron',sans-serif;
-            border:1px solid rgba(255,0,51,0.3);
-            transition:0.3s;
-        }
-
-        .chip:hover{
-            background:#ff0033;
-            box-shadow:0 0 15px #ff0033;
-            transform:translateY(-2px);
-        }
-
     </style>
 </head>
 
 <body>
 
-<!-- =========================
-     LOGIN SCREEN
-========================= -->
+<!-- LOGIN -->
 <div class="login-screen" id="loginScreen">
 
     <div class="login-box">
@@ -149,17 +91,9 @@
 
         <p>Neural Access Terminal</p>
 
-        <input
-            type="text"
-            id="name"
-            placeholder="Full Name (Signup)"
-        >
+        <input type="text" id="name" placeholder="Full Name">
 
-        <input
-            type="email"
-            id="email"
-            placeholder="Email Address"
-        >
+        <input type="email" id="email" placeholder="Email">
 
         <input
             type="password"
@@ -176,10 +110,7 @@
             Login
         </button>
 
-        <button
-            class="google-btn"
-            onclick="googleLogin()"
-        >
+        <button class="google-btn" onclick="googleLogin()">
             Continue with Google
         </button>
 
@@ -187,14 +118,10 @@
 
 </div>
 
-<!-- =========================
-     MATRIX BACKGROUND
-========================= -->
+<!-- MATRIX -->
 <div class="matrix-bg"></div>
 
-<!-- =========================
-     FLOATING WORDS
-========================= -->
+<!-- FLOATING -->
 <div class="floating-words">
     <span>CYMOR AI</span>
     <span>INTELLIGENCE</span>
@@ -202,9 +129,7 @@
     <span>FUTURE</span>
 </div>
 
-<!-- =========================
-     MAIN APP
-========================= -->
+<!-- MAIN APP -->
 <div class="main-container" id="app">
 
     <!-- HERO -->
@@ -221,18 +146,9 @@
             </h2>
 
             <p class="hero-description">
-                Welcome,
-                <span
-                    id="userName"
-                    style="
-                        color:#ff0033;
-                        font-weight:bold;
-                    "
-                >
-                    User
-                </span>
-
-                . CymorAI is ready.
+                Hy there👋,
+                <span id="userName">User</span>.
+                How may i help you now?
             </p>
 
         </div>
@@ -263,7 +179,7 @@
 
         </div>
 
-        <!-- QUICK CHIPS -->
+        <!-- CHIPS -->
         <div class="suggestion-chips">
 
             <button
@@ -300,12 +216,12 @@
         <div class="chat-box" id="chatBox">
 
             <div class="message bot">
-                ⚡ CymorAI Neural Core Initialized.
+                ⚡ CymorAI Neural Core Initialized and Ready To Assist😎
             </div>
 
         </div>
 
-        <!-- INPUT -->
+        <!-- FIXED INPUT -->
         <div class="input-section">
 
             <input
@@ -328,9 +244,7 @@
 
 </div>
 
-<!-- =========================
-     AUTH + LOGIN LOGIC
-========================= -->
+<!-- AUTH -->
 <script type="module">
 
 import {
@@ -353,19 +267,12 @@ window.signup = async function () {
         const password =
             document.getElementById("password").value;
 
-        if (!email || !password) {
-
-            alert("Please enter email and password.");
-            return;
-        }
-
         await signUp(email, password, name);
 
         enterApp(name || "User");
 
     } catch (err) {
 
-        console.error(err);
         alert(err.message);
     }
 };
@@ -381,28 +288,18 @@ window.login = async function () {
         const password =
             document.getElementById("password").value;
 
-        if (!email || !password) {
-
-            alert("Please enter email and password.");
-            return;
-        }
-
         const user =
             await loginUser(email, password);
 
-        enterApp(
-            user.displayName ||
-            "User"
-        );
+        enterApp(user.displayName || "User");
 
     } catch (err) {
 
-        console.error(err);
         alert(err.message);
     }
 };
 
-/* GOOGLE LOGIN */
+/* GOOGLE */
 window.googleLogin = async function () {
 
     try {
@@ -410,20 +307,16 @@ window.googleLogin = async function () {
         const user =
             await googleLogin();
 
-        enterApp(
-            user.displayName ||
-            "User"
-        );
+        enterApp(user.displayName || "User");
 
     } catch (err) {
 
-        console.error(err);
         alert(err.message);
     }
 };
 
 /* ENTER APP */
-function enterApp(name) {
+function enterApp(name){
 
     document.getElementById("loginScreen")
         .style.display = "none";
@@ -437,11 +330,7 @@ function enterApp(name) {
 
 </script>
 
-<!-- CHAT SCRIPT -->
-<script
-    type="module"
-    src="script.js"
-></script>
+<script type="module" src="script.js"></script>
 
 </body>
 </html>
