@@ -37,28 +37,34 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 // =============================================
-// AUTH LISTENER & UI TRANSITION
+// UPDATED AUTH LISTENER WITH RELIABLE WELCOME
 // =============================================
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
         console.log("🔥 Neural Link Established:", user.email);
-
-        // UI Transitions
+        
+        // 1. UI Transitions
         document.getElementById("loginScreen").style.display = "none";
         document.getElementById("app").style.display = "flex";
 
-        // Set User Name
+        // 2. Set Identity
         const firstName = user.displayName ? user.displayName.split(" ")[0] : "Explorer";
-        document.getElementById("userName").innerText = firstName;
+        const userNameElement = document.getElementById("userName");
+        if (userNameElement) userNameElement.innerText = firstName;
 
-        // Load Chat
+        // 3. Load Chat History First
         await loadChatHistory();
 
-        // Updated Logic: Auto-welcome every time a link is established
-        if (chatBox) {
-            setTimeout(() => sendWelcome(firstName), 500);
-        }
+        // 4. TRIGGER WELCOME (The Fix)
+        // A slight delay ensures the welcome bubble appears at the very bottom
+        // after the loaded history has finished rendering.
+        setTimeout(() => {
+            if (chatBox) {
+                sendWelcome(firstName);
+            }
+        }, 800);
+        
     } else {
         document.getElementById("loginScreen").style.display = "flex";
         document.getElementById("app").style.display = "none";
@@ -89,7 +95,7 @@ async function loadChatHistory() {
             const data = doc.data();
             createMessage(data.text, data.sender);
         });
-        scrollToBottom(true); // Instant scroll for history
+        scrollToBottom(true); // Instant jump to the end of history
     } catch (err) {
         console.error("History Error:", err);
     }
@@ -149,7 +155,8 @@ async function sendMessage() {
         await saveMessage(data.reply, "bot");
 
     } catch (error) {
-        if(document.querySelector('.thinking')) document.querySelector('.thinking').remove();
+        const thinkingNode = document.querySelector('.thinking');
+        if(thinkingNode) thinkingNode.remove();
         createMessage(`⚠️ System Error: ${error.message}`, "bot");
     } finally {
         userInput.disabled = false;
@@ -187,7 +194,7 @@ function typeWriter(element, text, speed = 20) {
         if (i < text.length) {
             element.innerHTML += text.charAt(i);
             i++;
-            // Instant scroll during typing for smoothness
+            // Instant scroll to keep new text in view
             chatBox.scrollTop = chatBox.scrollHeight;
             setTimeout(type, speed);
         }
