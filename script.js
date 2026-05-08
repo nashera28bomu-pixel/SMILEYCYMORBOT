@@ -1,89 +1,296 @@
-// Determine if we are running locally or on Render
-const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-    ? "http://localhost:3000/chat" 
-    : "/chat";
+// =============================================
+// CYMOR AI ELITE SCRIPT
+// Optimized for GROQ Backend
+// =============================================
 
-function setPrompt(text) { 
-    const input = document.getElementById("userInput");
-    if (input) {
-        input.value = text;
-        input.focus();
+// =============================================
+// API URL
+// =============================================
+const API_URL =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+
+        ? "http://localhost:3000/chat"
+
+        : "/chat";
+
+// =============================================
+// DOM ELEMENTS
+// =============================================
+const chatBox =
+    document.getElementById("chatBox");
+
+const userInput =
+    document.getElementById("userInput");
+
+// =============================================
+// QUICK PROMPTS
+// =============================================
+function setPrompt(text) {
+
+    userInput.value = text;
+
+    userInput.focus();
+}
+
+// =============================================
+// ENTER KEY SUPPORT
+// =============================================
+function handleKey(event) {
+
+    if (event.key === "Enter") {
+
+        sendMessage();
     }
 }
 
-function handleKey(e) {
-    if (e.key === "Enter") sendMessage();
+// =============================================
+// CREATE MESSAGE
+// =============================================
+function createMessage(text, sender) {
+
+    const message =
+        document.createElement("div");
+
+    message.className =
+        `message ${sender}`;
+
+    message.innerHTML = text;
+
+    chatBox.appendChild(message);
+
+    scrollToBottom();
+
+    return message;
 }
 
+// =============================================
+// AUTO SCROLL
+// =============================================
+function scrollToBottom() {
+
+    chatBox.scrollTo({
+
+        top: chatBox.scrollHeight,
+
+        behavior: "smooth"
+    });
+}
+
+// =============================================
+// TYPEWRITER EFFECT
+// =============================================
+function typeWriter(element, text, speed = 12) {
+
+    let index = 0;
+
+    element.innerHTML = "";
+
+    function type() {
+
+        if (index < text.length) {
+
+            element.innerHTML +=
+                text.charAt(index);
+
+            index++;
+
+            scrollToBottom();
+
+            setTimeout(type, speed);
+        }
+    }
+
+    type();
+}
+
+// =============================================
+// CYMOR THINKING MESSAGE
+// =============================================
+function createThinkingMessage() {
+
+    const thinking =
+        document.createElement("div");
+
+    thinking.className =
+        "message bot thinking";
+
+    thinking.innerHTML = `
+        <span class="thinking-text">
+            ⚡ CymorAI neural engine processing...
+        </span>
+    `;
+
+    chatBox.appendChild(thinking);
+
+    scrollToBottom();
+
+    return thinking;
+}
+
+// =============================================
+// SEND MESSAGE
+// =============================================
 async function sendMessage() {
-    const input = document.getElementById("userInput");
-    const chatBox = document.getElementById("chatBox");
-    const userText = input.value.trim();
-    
-    if (!userText) return;
 
-    console.log("📤 Sending message to:", API_URL);
+    const message =
+        userInput.value.trim();
 
-    // 1. UI Update: User Message
-    chatBox.insertAdjacentHTML('beforeend', `<div class="message user">${userText}</div>`);
-    input.value = "";
-    chatBox.scrollTop = chatBox.scrollHeight;
+    if (!message) return;
 
-    // 2. UI Update: Thinking State
-    const typingId = "typing-" + Date.now();
-    chatBox.insertAdjacentHTML('beforeend', `
-        <div class="message bot" id="${typingId}">
-            <em style="opacity: 0.7;">CymorAI is thinking...</em>
-        </div>
-    `);
-    chatBox.scrollTop = chatBox.scrollHeight;
+    // =========================================
+    // DISABLE INPUT TEMPORARILY
+    // =========================================
+    userInput.disabled = true;
+
+    // =========================================
+    // SHOW USER MESSAGE
+    // =========================================
+    createMessage(message, "user");
+
+    // =========================================
+    // CLEAR INPUT
+    // =========================================
+    userInput.value = "";
+
+    // =========================================
+    // SHOW THINKING
+    // =========================================
+    const thinkingMessage =
+        createThinkingMessage();
 
     try {
-        const response = await fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: userText })
-        });
 
-        const data = await response.json();
+        console.log(
+            "📤 Sending to:",
+            API_URL
+        );
 
-        // 3. Remove Thinking Animation
-        const typingElement = document.getElementById(typingId);
-        if (typingElement) typingElement.remove();
+        // =====================================
+        // FETCH REQUEST
+        // =====================================
+        const response =
+            await fetch(API_URL, {
 
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body: JSON.stringify({
+                    message
+                })
+            });
+
+        const data =
+            await response.json();
+
+        // =====================================
+        // REMOVE THINKING
+        // =====================================
+        thinkingMessage.remove();
+
+        // =====================================
+        // ERROR CHECK
+        // =====================================
         if (!response.ok) {
-            throw new Error(data.reply || "Server error occurred.");
+
+            throw new Error(
+                data.reply ||
+                "Unknown server error."
+            );
         }
 
-        // 4. UI Update: Bot Response with Typewriter Effect
-        const botId = "msg-" + Date.now();
-        chatBox.insertAdjacentHTML('beforeend', `<div class="message bot" id="${botId}"></div>`);
-        
-        const botElement = document.getElementById(botId);
-        const replyText = data.reply;
-        let index = 0;
+        // =====================================
+        // CREATE BOT MESSAGE
+        // =====================================
+        const botMessage =
+            createMessage("", "bot");
 
-        function typeEffect() {
-            if (index < replyText.length) {
-                botElement.textContent += replyText.charAt(index);
-                index++;
-                chatBox.scrollTop = chatBox.scrollHeight;
-                setTimeout(typeEffect, 10);
-            }
-        }
-        typeEffect();
+        // =====================================
+        // TYPE RESPONSE
+        // =====================================
+        typeWriter(
+            botMessage,
+            data.reply,
+            8
+        );
 
     } catch (error) {
-        console.error("❌ Fetch Error:", error);
-        
-        const typingElement = document.getElementById(typingId);
-        if (typingElement) typingElement.remove();
 
-        chatBox.insertAdjacentHTML('beforeend', `
-            <div class="message bot" style="color: #ff4d4d; border-left: 4px solid #ff4d4d;">
-                ⚠️ ${error.message}
-            </div>
-        `);
-        chatBox.scrollTop = chatBox.scrollHeight;
+        console.error(
+            "❌ CYMOR ERROR:",
+            error
+        );
+
+        // REMOVE THINKING
+        thinkingMessage.remove();
+
+        // SHOW ERROR
+        createMessage(
+            `
+            ⚠️ ${error.message}
+            `,
+            "bot"
+        );
+
+    } finally {
+
+        // =====================================
+        // ENABLE INPUT AGAIN
+        // =====================================
+        userInput.disabled = false;
+
+        userInput.focus();
     }
 }
+
+// =============================================
+// STARTUP ANIMATION
+// =============================================
+window.addEventListener("load", () => {
+
+    console.log(`
+╔══════════════════════════════╗
+║       CYMOR AI ACTIVE        ║
+║   Neural Interface Loaded    ║
+╚══════════════════════════════╝
+`);
+
+    // Small boot effect
+    setTimeout(() => {
+
+        createMessage(
+            `
+            🚀 Neural systems initialized.<br>
+            ⚡ Groq intelligence core connected.<br>
+            🧠 CymorAI ready for interaction.
+            `,
+            "bot"
+        );
+
+    }, 1200);
+});
+
+// =============================================
+// CYMOR BACKGROUND EFFECT
+// =============================================
+setInterval(() => {
+
+    const words =
+        document.querySelectorAll(
+            ".floating-words span"
+        );
+
+    words.forEach(word => {
+
+        const randomX =
+            Math.random() * 100;
+
+        word.style.left =
+            randomX + "%";
+    });
+
+}, 8000);
