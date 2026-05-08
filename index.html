@@ -33,7 +33,6 @@
     text-align: center;
 }
 
-/* Title */
 .login-box h1 {
     font-family: 'Orbitron', sans-serif;
     color: #ff0033;
@@ -42,7 +41,6 @@
     text-shadow: 0 0 15px red;
 }
 
-/* Inputs */
 .login-box input {
     width: 100%;
     padding: 12px;
@@ -54,7 +52,6 @@
     outline: none;
 }
 
-/* Buttons */
 .login-box button {
     width: 100%;
     padding: 12px;
@@ -72,14 +69,12 @@
     transform: scale(1.05);
 }
 
-/* Google button */
 .google-btn {
     background: black !important;
     border: 1px solid red;
     box-shadow: 0 0 10px red;
 }
 
-/* Hide main app until login */
 .main-container {
     display: none;
 }
@@ -112,21 +107,9 @@
 
 </div>
 
-<!-- MATRIX BACKGROUND -->
-<div class="matrix-bg"></div>
-
-<!-- FLOATING CYMOR WORDS -->
-<div class="floating-words">
-    <span>CYMOR AI</span>
-    <span>INTELLIGENCE</span>
-    <span>NEXUS</span>
-    <span>FUTURE</span>
-</div>
-
 <!-- MAIN APP -->
 <div class="main-container" id="app">
 
-    <!-- HERO PANEL (UNCHANGED) -->
     <section class="hero-panel">
         <div class="hero-content">
             <h1>CYMOR <span>AI</span></h1>
@@ -138,7 +121,6 @@
         </div>
     </section>
 
-    <!-- CHAT PANEL -->
     <section class="chat-panel">
 
         <div class="chat-header">
@@ -165,30 +147,42 @@
 
 </div>
 
-<!-- SCRIPT -->
+<!-- ================= FIREBASE AUTH LOGIC ================= -->
 <script type="module">
-import { signUp, googleLogin } from "./auth.js";
+import { signUp as fbSignUp, googleLogin as fbGoogleLogin } from "./auth.js";
 
 /* SIGNUP */
 window.signup = async function () {
-    const name = document.getElementById("name").value;
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+    try {
+        const name = document.getElementById("name").value;
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
 
-    const user = await signUp(email, password, name);
+        const user = await fbSignUp(email, password, name);
 
-    enterApp(name);
+        enterApp(name || "User");
+
+    } catch (err) {
+        console.error(err);
+        alert("Signup failed");
+    }
 };
 
-/* LOGIN (simple placeholder for now) */
+/* LOGIN */
 window.login = function () {
-    alert("Login function will use Firebase Auth login (next step).");
+    alert("Login will be enabled via Firebase Auth login next step.");
 };
 
 /* GOOGLE LOGIN */
 window.googleLogin = async function () {
-    const user = await googleLogin();
-    enterApp(user.displayName || "User");
+    try {
+        const user = await fbGoogleLogin();
+        enterApp(user.displayName || "User");
+
+    } catch (err) {
+        console.error(err);
+        alert("Google login failed");
+    }
 };
 
 /* ENTER APP */
@@ -199,6 +193,7 @@ function enterApp(name) {
 }
 </script>
 
+<!-- CHAT SCRIPT -->
 <script src="script.js"></script>
 
 </body>
