@@ -5,6 +5,7 @@
     margin:0;
     padding:0;
     box-sizing:border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 :root{
@@ -12,16 +13,18 @@
     --panel:rgba(10,15,30,0.95);
     --red:#ff0033;
     --neon-green:#00ffaa;
-    --bot-bubble: rgba(255, 255, 255, 0.05);
-    --user-gradient: linear-gradient(135deg, #004e92, #000428);
+    --bot-bubble: rgba(255, 255, 255, 0.04);
+    --user-gradient: linear-gradient(135deg, #0066ff, #001a33);
     --text:#e2e8f0;
+    --border: rgba(0, 255, 170, 0.15);
 }
 
 html, body {
     height: 100%;
-    overflow: hidden;
+    width: 100%;
+    overflow: hidden; /* Prevents whole page bounce */
     font-family: 'Outfit', sans-serif;
-    background: radial-gradient(circle at top,#1a0000 0%,#020617 60%);
+    background: radial-gradient(circle at top,#1a0000 0%,#020617 60%), #000;
     color: var(--text);
 }
 
@@ -29,37 +32,44 @@ html, body {
    MAIN CONTAINER
 =================================== */
 .main-container {
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100dvh; /* Dynamic VH for mobile bars */
     display: flex;
     justify-content: center;
-    background: #000;
 }
 
 /* ===================================
-   SLEEK CHAT PANEL FIX
+   SLEEK CHAT PANEL
 =================================== */
 .chat-panel {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 100%;
     width: 100%;
     max-width: 600px;
-    background: #0a0e14;
-    border-left: 1px solid rgba(0, 255, 170, 0.1);
-    border-right: 1px solid rgba(0, 255, 170, 0.1);
-    position: relative;
+    background: rgba(10, 14, 20, 0.6);
+    backdrop-filter: blur(20px);
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
 }
 
 .chat-header {
     padding: 20px;
-    border-bottom: 1px solid rgba(0, 255, 170, 0.1);
+    border-bottom: 1px solid var(--border);
     background: rgba(10, 14, 20, 0.8);
-    backdrop-filter: blur(10px);
+    text-align: center;
+}
+
+.chat-header h2 {
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    color: var(--neon-green);
+    text-shadow: 0 0 10px rgba(0, 255, 170, 0.3);
 }
 
 /* ===================================
-   CHAT BOX & BUBBLES
+   SCROLLABLE CHAT BOX
 =================================== */
 .chat-box {
     flex: 1;
@@ -67,27 +77,31 @@ html, body {
     padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    scrollbar-width: none; /* Firefox */
+    gap: 20px;
+    scroll-behavior: smooth;
+    /* Custom Scrollbar for Chrome/Safari */
 }
 
 .chat-box::-webkit-scrollbar {
-    display: none; /* Chrome/Safari */
+    width: 4px;
+}
+.chat-box::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 10px;
 }
 
+/* ===================================
+   MESSAGE BUBBLES (MODERN LOOK)
+=================================== */
 .message {
     max-width: 85%;
-    padding: 12px 18px;
-    border-radius: 18px;
-    font-size: 14px;
-    line-height: 1.6;
+    padding: 14px 18px;
+    border-radius: 22px;
+    font-size: 15px;
+    line-height: 1.5;
     word-wrap: break-word;
-    animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    position: relative;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
 .message.user {
@@ -95,8 +109,7 @@ html, body {
     background: var(--user-gradient);
     color: white;
     border-bottom-right-radius: 4px;
-    border: 1px solid rgba(0, 191, 255, 0.3);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(0, 102, 255, 0.4);
 }
 
 .message.bot {
@@ -104,106 +117,72 @@ html, body {
     background: var(--bot-bubble);
     color: #e0e0e0;
     border-bottom-left-radius: 4px;
-    border: 1px solid rgba(0, 255, 170, 0.2);
+    border: 1px solid var(--border);
 }
 
 /* ===================================
-   FLOATING INPUT SECTION
+   INPUT AREA (FIXED BOTTOM)
 =================================== */
 .input-section {
-    padding: 15px 15px calc(15px + env(safe-area-inset-bottom));
-    background: rgba(10, 14, 20, 0.98);
+    padding: 20px;
+    background: rgba(5, 8, 12, 0.9);
     display: flex;
     gap: 12px;
     align-items: center;
-    border-top: 1px solid rgba(0, 255, 170, 0.1);
+    border-top: 1px solid var(--border);
 }
 
 #userInput {
     flex: 1;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(0, 255, 170, 0.3);
-    padding: 14px 22px;
-    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    padding: 14px 20px;
+    border-radius: 15px;
     color: white;
-    font-size: 14px;
+    font-size: 15px;
     outline: none;
-    transition: all 0.3s ease;
+    transition: 0.3s ease;
 }
 
 #userInput:focus {
     border-color: var(--neon-green);
-    background: rgba(255, 255, 255, 0.05);
-    box-shadow: 0 0 15px rgba(0, 255, 170, 0.1);
+    box-shadow: 0 0 15px rgba(0, 255, 170, 0.2);
 }
 
 #sendBtn {
     background: var(--neon-green);
     border: none;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    border-radius: 15px; /* Match input radius */
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: 0.3s ease;
+    box-shadow: 0 0 15px rgba(0, 255, 170, 0.2);
 }
 
 #sendBtn:hover {
-    transform: scale(1.1) rotate(-10deg);
-    box-shadow: 0 0 20px var(--neon-green);
-}
-
-#sendBtn svg, #sendBtn i {
-    color: #000;
-    font-size: 1.4rem;
+    transform: scale(1.05);
+    filter: brightness(1.1);
 }
 
 /* ===================================
-   MOBILE OVERRIDE FIX
+   MOBILE OPTIMIZATION
 =================================== */
 @media(max-width: 768px) {
-    .main-container {
-        padding: 0;
-        margin: 0;
-        display: block; /* Stack vertically instead of side-by-side */
-        overflow: hidden;
-        height: 100vh;
-    }
-
-    /* Hide the Hero panel on mobile so the chat has room */
-    .hero-panel {
-        display: none !important;
-    }
-
     .chat-panel {
-        width: 100%;
-        height: 100vh;
-        max-width: none;
+        max-width: 100%;
         border: none;
-        border-radius: 0;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .chat-box {
-        flex: 1; /* This forces the box to take up all available space */
-        padding-bottom: 80px; /* Room for the fixed input at the bottom */
-    }
-
-    .input-section {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        z-index: 100;
-        background: #0a0e14;
-        padding: 15px;
-        padding-bottom: calc(15px + env(safe-area-inset-bottom));
     }
     
     .message {
         max-width: 90%;
+    }
+    
+    /* Ensure input stays visible above keyboard */
+    .input-section {
+        padding-bottom: calc(20px + env(safe-area-inset-bottom));
     }
 }
