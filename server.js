@@ -5,43 +5,32 @@ const cors = require("cors");
 const OpenAI = require("openai");
 
 const app = express();
-
 const PORT = process.env.PORT || 3000;
 
 // =====================================================
 // MIDDLEWARE
 // =====================================================
 app.use(cors());
-
-app.use(express.json({
-    limit: "1mb"
-}));
-
+app.use(express.json({ limit: "1mb" }));
 app.use(express.static("."));
 
 // =====================================================
 // API KEY CHECK
 // =====================================================
 if (!process.env.GROQ_API_KEY) {
-
-    console.error(`
-❌ ERROR:
-GROQ_API_KEY missing in .env
-`);
+    console.error("❌ GROQ_API_KEY missing in .env");
 }
 
 // =====================================================
 // GROQ CLIENT
 // =====================================================
 const client = new OpenAI({
-
     apiKey: process.env.GROQ_API_KEY,
-
     baseURL: "https://api.groq.com/openai/v1"
 });
 
 // =====================================================
-// ANTI-SPAM / RATE LIMIT
+// RATE LIMIT
 // =====================================================
 let lastRequestTime = 0;
 
@@ -52,210 +41,93 @@ const SYSTEM_PROMPT = `
 You are CymorAI — an elite futuristic AI assistant.
 
 PERSONALITY:
-- Intelligent
-- Confident
-- Futuristic
-- Helpful
-- Modern
-- Slightly cinematic
+- Intelligent, calm, and powerful
+- Futuristic and professional tone
+- Helpful in coding, business, AI, learning, and creativity
 
 RULES:
-- Keep responses concise but powerful.
-- Be engaging and natural.
-- Help with coding, AI, school, business, creativity, and strategy.
-- Never sound robotic.
-- Use premium futuristic tone.
-- Avoid excessive emojis.
+- Keep responses clear and meaningful
+- Avoid being overly verbose
+- Be natural and human-like
+- No unnecessary emojis unless impactful
+- Do NOT include your signature or branding text
 `;
 
 // =====================================================
 // CHAT ROUTE
 // =====================================================
 app.post("/chat", async (req, res) => {
-
     try {
-
         const now = Date.now();
 
-        // =================================================
-        // COOLDOWN PROTECTION
-        // =================================================
-        if (now - lastRequestTime < 2500) {
-
+        // cooldown
+        if (now - lastRequestTime < 2000) {
             return res.status(429).json({
-
-                reply:
-                    "⚠️ Neural systems cooling down. Please wait a moment."
+                reply: "⚠️ CymorAI is cooling down. Please wait..."
             });
         }
 
         lastRequestTime = now;
 
-        // =================================================
-        // REQUEST DATA
-        // =================================================
-        const {
-            message
-        } = req.body;
+        const { message, userId } = req.body;
 
-        console.log(`
-📩 Incoming Message:
-${message}
-`);
-
-        // =================================================
-        // VALIDATION
-        // =================================================
-        if (!process.env.GROQ_API_KEY) {
-
-            return res.status(500).json({
-
-                reply:
-                    "⚠️ GROQ API Key missing."
-            });
-        }
+        console.log("📩 Message:", message);
+        console.log("🧠 User:", userId || "anonymous");
 
         if (!message || message.trim() === "") {
-
             return res.status(400).json({
-
-                reply:
-                    "⚠️ Please enter a message."
+                reply: "⚠️ Please enter a message."
             });
         }
 
         // =================================================
         // GROQ AI REQUEST
         // =================================================
-        const completion =
-            await client.chat.completions.create({
+        const completion = await client.chat.completions.create({
+            model: "llama-3.3-70b-versatile",
+            messages: [
+                {
+                    role: "system",
+                    content: SYSTEM_PROMPT
+                },
+                {
+                    role: "user",
+                    content: message
+                }
+            ],
+            temperature: 0.7,
+            max_tokens: 350,
+            top_p: 0.9
+        });
 
-                // FAST + SMART MODEL
-                model:
-                    "llama-3.3-70b-versatile",
-
-                messages: [
-
-                    {
-                        role: "system",
-
-                        content: SYSTEM_PROMPT
-                    },
-
-                    {
-                        role: "user",
-
-                        content: message
-                    }
-                ],
-
-                temperature: 0.7,
-
-                max_tokens: 300,
-
-                top_p: 0.9,
-
-                stream: false
-            });
+        let reply = completion.choices[0].message.content;
 
         // =================================================
-        // EXTRACT RESPONSE
+        // CYMOR SIGNATURE (2 LINES DOWN)
         // =================================================
-        const reply =
-            completion
-            .choices[0]
-            .message
-            .content;
+        reply += `\n\n\n────────────────────\n✨ Powered by CymorAI ⚡`;
 
-        console.log("✅ Response generated");
+        console.log("✅ Response sent");
 
-        // =================================================
-        // SEND RESPONSE
-        // =================================================
         res.json({
-
-            reply:
-`${reply}
-
-— Powered by CymorAI`
+            reply,
+            userId: userId || null
         });
 
     } catch (error) {
+        console.error("🔥 SERVER ERROR:", error);
 
-        console.error(`
-🔥 FULL SERVER ERROR:
-`);
+        let errorMessage = "⚠️ CymorAI encountered a temporary issue.";
 
-        console.error(error);
-
-        let errorMessage =
-            "⚠️ CymorAI encountered a temporary issue.";
-
-        // =================================================
-        // SMART ERROR HANDLING
-        // =================================================
-
-        // RATE LIMIT
-        if (
-
-            error.message?.includes("rate_limit") ||
-
-            error.message?.includes("429")
-        ) {
-
-            errorMessage =
-                "⚠️ CymorAI is currently busy. Try again shortly.";
+        if (error.message?.includes("rate_limit") || error.message?.includes("429")) {
+            errorMessage = "⚠️ CymorAI is currently busy. Try again shortly.";
+        } else if (error.message?.includes("authentication")) {
+            errorMessage = "⚠️ Invalid API Key detected.";
+        } else if (error.message?.includes("network")) {
+            errorMessage = "⚠️ Network connection issue.";
         }
 
-        // INVALID KEY
-        else if (
-
-            error.message?.includes("Invalid API Key") ||
-
-            error.message?.includes("authentication")
-        ) {
-
-            errorMessage =
-                "⚠️ Invalid GROQ API Key.";
-        }
-
-        // NETWORK ERROR
-        else if (
-
-            error.message?.includes("fetch") ||
-
-            error.message?.includes("network")
-        ) {
-
-            errorMessage =
-                "⚠️ Network connection issue detected.";
-        }
-
-        // SERVER ERROR
-        else if (
-
-            error.message?.includes("500")
-        ) {
-
-            errorMessage =
-                "⚠️ Neural core temporarily unstable.";
-        }
-
-        // MODEL ERROR
-        else if (
-
-            error.message?.includes("model")
-        ) {
-
-            errorMessage =
-                "⚠️ AI model temporarily unavailable.";
-        }
-
-        // =================================================
-        // SEND ERROR RESPONSE
-        // =================================================
         res.status(500).json({
-
             reply: errorMessage
         });
     }
@@ -265,19 +137,12 @@ ${message}
 // HEALTH CHECK
 // =====================================================
 app.get("/health", (req, res) => {
-
-    res.status(200).json({
-
+    res.json({
         status: "online",
-
         ai: "CymorAI",
-
         provider: "Groq",
-
         model: "llama-3.3-70b-versatile",
-
-        uptime:
-            Math.floor(process.uptime()) + " seconds"
+        uptime: Math.floor(process.uptime()) + "s"
     });
 });
 
@@ -285,29 +150,32 @@ app.get("/health", (req, res) => {
 // ROOT ROUTE
 // =====================================================
 app.get("/", (req, res) => {
-
     res.send(`
-    <h1 style="font-family:sans-serif;">
-        🚀 CymorAI Backend Online
-    </h1>
-
-    <p>Groq Neural Engine Active</p>
+        <div style="
+            font-family: Arial;
+            text-align:center;
+            margin-top:50px;
+        ">
+            <h1>🚀 CymorAI Backend Online</h1>
+            <p>Neural Engine Active ⚡</p>
+        </div>
     `);
 });
 
 // =====================================================
-// START SERVER
+// START SERVER (UPDATED PREMIUM VERSION)
 // =====================================================
 app.listen(PORT, "0.0.0.0", () => {
-
     console.log(`
 ╔══════════════════════════════════╗
 ║          🚀 CYMOR AI             ║
 ║      Neural Core Activated       ║
-║----------------------------------║
-║  Provider : GROQ                 ║
-║  Model    : Llama 3.3 70B        ║
-║  Port     : ${PORT}
+╠══════════════════════════════════╣
+║ Provider : GROQ                  ║
+║ Model    : Llama 3.3 70B         ║
+║ Status   : ONLINE ⚡             ║
 ╚══════════════════════════════════╝
 `);
+
+    console.log(`🚀 CymorAI running on port ${PORT}`);
 });
