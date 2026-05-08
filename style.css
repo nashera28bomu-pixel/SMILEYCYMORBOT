@@ -6,35 +6,43 @@
 
 :root{
     --bg:#020617;
-    --panel:rgba(10,15,30,0.55);
+    --panel:rgba(10,15,30,0.58);
     --glass:rgba(255,255,255,0.04);
 
     --red:#ff0033;
     --neon-red:#ff1a4d;
+    --deep-red:#7a001a;
 
     --cyan:#00e5ff;
     --green:#00ff9d;
+    --purple:#8b5cf6;
 
     --text:#e2e8f0;
     --muted:#94a3b8;
 }
 
+/* ===================================
+   GLOBAL
+=================================== */
 body{
     font-family:'Outfit',sans-serif;
-    background: radial-gradient(circle at top, #120000 0%, #020617 60%);
+    background:
+    radial-gradient(circle at top,#1a0000 0%,#020617 60%),
+    linear-gradient(135deg,#020617,#000000);
     color:var(--text);
     height:100vh;
     overflow:hidden;
 }
 
-/* =========================
-   MATRIX BACKGROUND (ENHANCED)
-========================= */
+/* ===================================
+   MATRIX BACKGROUND
+=================================== */
 .matrix-bg{
     position:fixed;
     inset:0;
     background:
-    radial-gradient(circle at top,#1a0000 0%,#020617 70%),
+    radial-gradient(circle at top,#220000 0%,#020617 70%),
+
     repeating-linear-gradient(
         0deg,
         rgba(255,0,51,0.03) 0px,
@@ -42,6 +50,7 @@ body{
         transparent 1px,
         transparent 40px
     ),
+
     repeating-linear-gradient(
         90deg,
         rgba(0,229,255,0.02) 0px,
@@ -49,13 +58,24 @@ body{
         transparent 1px,
         transparent 40px
     );
+
     z-index:-3;
-    filter: blur(0.2px);
+    animation:bgPulse 8s ease infinite alternate;
 }
 
-/* =========================
+@keyframes bgPulse{
+    from{
+        filter:brightness(1);
+    }
+
+    to{
+        filter:brightness(1.15);
+    }
+}
+
+/* ===================================
    FLOATING WORDS
-========================= */
+=================================== */
 .floating-words{
     position:fixed;
     inset:0;
@@ -70,18 +90,52 @@ body{
     font-family:'Orbitron',sans-serif;
     font-weight:700;
     color:rgba(255,0,51,0.08);
-    text-shadow:0 0 10px rgba(255,0,51,0.2);
+    text-shadow:0 0 15px rgba(255,0,51,0.25);
     animation:floatUp 14s linear infinite;
 }
 
-@keyframes floatUp{
-    from{ transform:translateY(0); }
-    to{ transform:translateY(-140vh); }
+.floating-words span:nth-child(1){
+    left:10%;
+    bottom:-10%;
 }
 
-/* =========================
-   MAIN LAYOUT (FULL SCREEN FIX)
-========================= */
+.floating-words span:nth-child(2){
+    left:40%;
+    bottom:-20%;
+    animation-duration:18s;
+}
+
+.floating-words span:nth-child(3){
+    left:70%;
+    bottom:-15%;
+    animation-duration:12s;
+}
+
+.floating-words span:nth-child(4){
+    left:85%;
+    bottom:-25%;
+    animation-duration:20s;
+}
+
+@keyframes floatUp{
+    from{
+        transform:translateY(0);
+        opacity:0;
+    }
+
+    10%{
+        opacity:1;
+    }
+
+    to{
+        transform:translateY(-140vh);
+        opacity:0;
+    }
+}
+
+/* ===================================
+   MAIN LAYOUT
+=================================== */
 .main-container{
     width:100vw;
     height:100vh;
@@ -90,9 +144,9 @@ body{
     padding:20px;
 }
 
-/* =========================
+/* ===================================
    HERO PANEL
-========================= */
+=================================== */
 .hero-panel{
     flex:1;
     background:var(--panel);
@@ -101,11 +155,30 @@ body{
     border-radius:28px;
     padding:35px;
     box-shadow:
-        0 0 40px rgba(255,0,51,0.08),
-        inset 0 0 60px rgba(0,0,0,0.4);
+        0 0 50px rgba(255,0,51,0.08),
+        inset 0 0 60px rgba(0,0,0,0.5);
     overflow:auto;
+    position:relative;
 }
 
+.hero-panel::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+    linear-gradient(
+        135deg,
+        rgba(255,0,51,0.04),
+        transparent,
+        rgba(0,229,255,0.04)
+    );
+
+    pointer-events:none;
+}
+
+/* ===================================
+   HERO CONTENT
+=================================== */
 .hero-content h1{
     font-family:'Orbitron',sans-serif;
     font-size:5rem;
@@ -114,7 +187,9 @@ body{
 
 .hero-content h1 span{
     color:var(--red);
-    text-shadow:0 0 25px var(--red);
+    text-shadow:
+        0 0 15px var(--red),
+        0 0 35px var(--red);
 }
 
 .hero-content h2{
@@ -122,17 +197,19 @@ body{
     color:var(--cyan);
     letter-spacing:6px;
     margin-bottom:25px;
+    text-shadow:0 0 15px rgba(0,229,255,0.4);
 }
 
 .hero-description{
     color:var(--muted);
     line-height:1.8;
     margin-bottom:40px;
+    font-size:1.05rem;
 }
 
-/* =========================
-   FEATURE CARDS (GLASSMORPHISM++)
-========================= */
+/* ===================================
+   FEATURE CARDS
+=================================== */
 .hero-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
@@ -144,19 +221,36 @@ body{
     border:1px solid rgba(255,0,51,0.08);
     border-radius:20px;
     padding:20px;
-    transition:0.3s;
+    transition:0.35s ease;
     backdrop-filter:blur(10px);
+    position:relative;
+    overflow:hidden;
+}
+
+.feature-card::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+    linear-gradient(
+        135deg,
+        rgba(255,0,51,0.05),
+        transparent,
+        rgba(0,229,255,0.05)
+    );
 }
 
 .feature-card:hover{
     transform:translateY(-8px);
     border-color:var(--red);
-    box-shadow:0 0 25px rgba(255,0,51,0.2);
+    box-shadow:
+        0 0 30px rgba(255,0,51,0.25),
+        0 0 60px rgba(0,229,255,0.08);
 }
 
-/* =========================
-   CHAT PANEL (PREMIUM LOOK)
-========================= */
+/* ===================================
+   CHAT PANEL
+=================================== */
 .chat-panel{
     width:430px;
     display:flex;
@@ -171,11 +265,14 @@ body{
         inset 0 0 50px rgba(0,0,0,0.4);
 }
 
-/* HEADER */
+/* ===================================
+   CHAT HEADER
+=================================== */
 .chat-header{
     padding:22px;
     display:flex;
     justify-content:space-between;
+    align-items:center;
     border-bottom:1px solid rgba(255,0,51,0.08);
 }
 
@@ -183,7 +280,7 @@ body{
     font-family:'Orbitron';
     font-size:1.6rem;
     color:var(--green);
-    text-shadow:0 0 12px rgba(0,255,157,0.3);
+    text-shadow:0 0 15px rgba(0,255,157,0.5);
 }
 
 .chat-subtitle{
@@ -192,60 +289,93 @@ body{
     letter-spacing:3px;
 }
 
-/* LIVE BADGE */
+/* ===================================
+   LIVE BADGE
+=================================== */
 .live-badge{
     background:rgba(255,0,51,0.12);
     color:var(--red);
     border:1px solid rgba(255,0,51,0.3);
-    padding:6px 12px;
+    padding:6px 14px;
     border-radius:20px;
     font-size:12px;
-    box-shadow:0 0 15px rgba(255,0,51,0.2);
+    font-weight:600;
+    box-shadow:
+        0 0 15px rgba(255,0,51,0.2),
+        inset 0 0 10px rgba(255,0,51,0.08);
 }
 
-/* QUICK ACTIONS */
-.quick-actions{
+/* ===================================
+   SUGGESTION CHIPS
+=================================== */
+.suggestion-chips{
     display:flex;
-    flex-wrap:wrap;
     gap:10px;
     padding:15px;
+    overflow-x:auto;
 }
 
-.quick-actions button{
-    background:rgba(255,255,255,0.03);
-    border:1px solid rgba(255,0,51,0.1);
-    color:var(--text);
-    padding:10px 14px;
-    border-radius:14px;
-    cursor:pointer;
-    transition:0.3s;
+.suggestion-chips::-webkit-scrollbar{
+    display:none;
 }
 
-.quick-actions button:hover{
-    background:var(--red);
+.chip{
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,0,51,0.12);
     color:white;
-    box-shadow:0 0 15px var(--red);
+    padding:10px 16px;
+    border-radius:18px;
+    cursor:pointer;
+    transition:0.3s ease;
+    font-family:'Orbitron';
+    font-size:11px;
+    white-space:nowrap;
 }
 
-/* CHAT BOX */
+.chip:hover{
+    background:var(--red);
+    transform:translateY(-3px);
+    box-shadow:
+        0 0 20px rgba(255,0,51,0.45);
+}
+
+/* ===================================
+   CHAT BOX
+=================================== */
 .chat-box{
     flex:1;
     overflow-y:auto;
     padding:18px;
+    scroll-behavior:smooth;
 }
 
+.chat-box::-webkit-scrollbar{
+    width:6px;
+}
+
+.chat-box::-webkit-scrollbar-thumb{
+    background:rgba(255,0,51,0.3);
+    border-radius:20px;
+}
+
+/* ===================================
+   MESSAGES
+=================================== */
 .message{
     margin-bottom:15px;
     max-width:85%;
-    line-height:1.6;
+    line-height:1.7;
     animation:fadeIn 0.3s ease;
+    word-wrap:break-word;
 }
 
 .bot{
-    background:rgba(255,255,255,0.03);
+    background:rgba(255,255,255,0.04);
     border-left:3px solid var(--green);
     padding:14px;
     border-radius:0 16px 16px 16px;
+    box-shadow:
+        0 0 15px rgba(0,255,157,0.06);
 }
 
 .user{
@@ -254,14 +384,64 @@ body{
     border-right:3px solid var(--red);
     padding:14px;
     border-radius:16px 0 16px 16px;
+    box-shadow:
+        0 0 15px rgba(255,0,51,0.08);
 }
 
-/* INPUT AREA */
+/* ===================================
+   THINKING MESSAGE
+=================================== */
+.thinking{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:#00ffcc;
+    font-style:italic;
+    animation:pulse 1.2s infinite;
+}
+
+.thinking::before{
+    content:"🧠";
+    font-size:22px;
+    filter:drop-shadow(0 0 10px #00ffee);
+    animation:brainGlow 1s infinite alternate;
+}
+
+@keyframes brainGlow{
+    from{
+        transform:scale(1);
+        filter:drop-shadow(0 0 5px #00ffee);
+    }
+
+    to{
+        transform:scale(1.15);
+        filter:drop-shadow(0 0 20px #00ffee);
+    }
+}
+
+@keyframes pulse{
+    0%{
+        opacity:0.5;
+    }
+
+    50%{
+        opacity:1;
+    }
+
+    100%{
+        opacity:0.5;
+    }
+}
+
+/* ===================================
+   INPUT AREA
+=================================== */
 .input-section{
     display:flex;
     gap:10px;
     padding:16px;
     border-top:1px solid rgba(255,0,51,0.08);
+    background:rgba(0,0,0,0.15);
 }
 
 .input-section input{
@@ -269,32 +449,62 @@ body{
     padding:14px;
     border-radius:14px;
     border:1px solid rgba(255,0,51,0.1);
-    background:rgba(0,0,0,0.4);
+    background:rgba(0,0,0,0.45);
     color:white;
     outline:none;
+    transition:0.3s ease;
+}
+
+.input-section input::placeholder{
+    color:#94a3b8;
 }
 
 .input-section input:focus{
     border-color:var(--red);
-    box-shadow:0 0 10px rgba(255,0,51,0.3);
+    box-shadow:
+        0 0 15px rgba(255,0,51,0.3),
+        0 0 30px rgba(0,229,255,0.08);
 }
 
-.send-btn{
-    width:55px;
+/* ===================================
+   SEND BUTTON ELITE
+=================================== */
+.input-section button{
+    width:60px;
     border:none;
     border-radius:14px;
-    background:linear-gradient(135deg,var(--red),#7a001a);
+    background:
+    linear-gradient(
+        135deg,
+        #ff0033,
+        #8b0000
+    );
+
     color:white;
+    font-size:20px;
     cursor:pointer;
-    transition:0.3s;
+    transition:0.3s ease;
+
+    box-shadow:
+        0 0 10px rgba(255,0,51,0.5),
+        0 0 20px rgba(255,0,51,0.3);
 }
 
-.send-btn:hover{
+.input-section button:hover{
     transform:scale(1.08);
-    box-shadow:0 0 20px rgba(255,0,51,0.4);
+
+    box-shadow:
+        0 0 20px rgba(255,0,51,0.8),
+        0 0 35px rgba(255,0,51,0.5);
 }
 
-/* FOOTER */
+.input-section button:active{
+    transform:scale(0.95);
+}
+
+/* ===================================
+   FOOTER
+=================================== */
 .footer{
     text-align:center;
     font-size:12px;
@@ -303,10 +513,11 @@ body{
     border-top:1px solid rgba(255,0,51,0.08);
 }
 
-/* =========================
+/* ===================================
    MOBILE OPTIMIZATION
-========================= */
+=================================== */
 @media(max-width:1000px){
+
     .main-container{
         flex-direction:column;
         padding:10px;
@@ -320,10 +531,27 @@ body{
         width:100%;
         height:100%;
     }
+
+    .chat-title{
+        font-size:1.3rem;
+    }
+
+    .input-section input{
+        font-size:16px;
+    }
 }
 
-/* FADE ANIMATION */
+/* ===================================
+   FADE ANIMATION
+=================================== */
 @keyframes fadeIn{
-    from{opacity:0; transform:translateY(10px);}
-    to{opacity:1; transform:translateY(0);}
+    from{
+        opacity:0;
+        transform:translateY(10px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
 }
