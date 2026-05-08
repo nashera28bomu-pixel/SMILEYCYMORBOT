@@ -108,7 +108,6 @@
             transform: translateY(-2px);
         }
 
-        /* Hidden by default until script.js handles the auth state */
         .main-container {
             display: none; 
         }
@@ -123,8 +122,8 @@
         <p style="color:#aaa; font-size:13px; margin-bottom: 20px;">Neural Access Terminal</p>
 
         <input type="text" id="name" placeholder="Full Name (For Signup)">
-        <input type="email" id="email" placeholder="Email Address">
-        <input type="password" id="password" placeholder="Password">
+        <input type="email" id="email" placeholder="Email Address" onkeydown="window.handleKey(event)">
+        <input type="password" id="password" placeholder="Password" onkeydown="window.handleKey(event)">
 
         <button onclick="handleSignup()">Create Account</button>
         <button onclick="handleLogin()">Login</button>
@@ -174,28 +173,56 @@
 <script type="module">
     import { signUp, loginEmail, googleLogin } from "./auth.js";
 
-    // Attach to window so HTML buttons can see them
+    // --- HANDLE SIGNUP ---
     window.handleSignup = async () => {
-        const name = document.getElementById("name").value;
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
         try {
+            const name = document.getElementById("name").value;
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            if(!email || !password) throw new Error("Neural Link Failure: Credentials missing.");
+            
             await signUp(email, password, name);
-        } catch (err) { alert(err.message); }
+            console.log("Signup success. Transitioning...");
+        } catch (err) { 
+            console.error("Signup Error:", err);
+            alert("Signup Failed: " + err.message); 
+        }
     };
 
+    // --- HANDLE LOGIN ---
     window.handleLogin = async () => {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
+
+        if (!email || !password) {
+            alert("Neural Link Failure: Please enter both email and password.");
+            return;
+        }
+
         try {
+            console.log("Attempting login for:", email);
             await loginEmail(email, password);
-        } catch (err) { alert(err.message); }
+            // Note: UI transition is handled by script.js via onAuthStateChanged
+        } catch (err) { 
+            console.error("Login Error:", err.code);
+            
+            if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+                alert("Access Denied: Incorrect email or password.");
+            } else if (err.code === 'auth/user-not-found') {
+                alert("Account Not Found: Please create an account first.");
+            } else {
+                alert("Login Failed: " + err.message);
+            }
+        }
     };
 
+    // --- HANDLE GOOGLE ---
     window.handleGoogleLogin = async () => {
         try {
             await googleLogin();
-        } catch (err) { alert("Google Auth Failed"); }
+        } catch (err) { 
+            alert("Google Auth Failed: " + err.message); 
+        }
     };
 </script>
 
