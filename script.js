@@ -1,6 +1,6 @@
 // =============================================
 // CYMOR AI ELITE SCRIPT
-// FIREBASE MEMORY + ELITE UI
+// FIREBASE MEMORY + STABLE UI FIX
 // =============================================
 
 import { auth, db } from "./firebase.js";
@@ -20,27 +20,29 @@ import {
 const API_URL =
     window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1"
-
         ? "http://localhost:3000/chat"
-
         : "/chat";
 
 // =============================================
-// DOM
+// DOM (SAFE INIT)
 // =============================================
-const chatBox =
-    document.getElementById("chatBox");
-
-const userInput =
-    document.getElementById("userInput");
-
-const sendBtn =
-    document.getElementById("sendBtn");
-
-// =============================================
-// CURRENT USER
-// =============================================
+let chatBox, userInput, sendBtn;
 let currentUser = null;
+
+// =============================================
+// DOM READY CHECK (IMPORTANT FIX YOU ADDED)
+// =============================================
+window.addEventListener("DOMContentLoaded", () => {
+
+    chatBox = document.getElementById("chatBox");
+    userInput = document.getElementById("userInput");
+    sendBtn = document.getElementById("sendBtn");
+
+    if (!chatBox || !userInput) {
+        console.error("Chat UI not loaded properly");
+        return;
+    }
+});
 
 // =============================================
 // AUTH LISTENER
@@ -51,50 +53,28 @@ auth.onAuthStateChanged(async (user) => {
 
         currentUser = user;
 
-        console.log(
-            "🔥 Logged in:",
-            user.email
-        );
+        console.log("🔥 Logged in:", user.email);
 
-        // SHOW APP
-        document.getElementById(
-            "loginScreen"
-        ).style.display = "none";
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("app").style.display = "flex";
 
-        document.getElementById(
-            "app"
-        ).style.display = "flex";
-
-        // USER NAME
         const firstName =
             user.displayName
                 ? user.displayName.split(" ")[0]
                 : "User";
 
-        document.getElementById(
-            "userName"
-        ).innerText = firstName;
+        document.getElementById("userName").innerText = firstName;
 
-        // LOAD HISTORY
         await loadChatHistory();
 
-        // WELCOME MESSAGE
-        if (
-            chatBox.children.length === 0
-        ) {
-
+        if (chatBox && chatBox.children.length === 0) {
             showWelcome(firstName);
         }
 
     } else {
 
-        document.getElementById(
-            "loginScreen"
-        ).style.display = "flex";
-
-        document.getElementById(
-            "app"
-        ).style.display = "none";
+        document.getElementById("loginScreen").style.display = "flex";
+        document.getElementById("app").style.display = "none";
     }
 });
 
@@ -103,206 +83,109 @@ auth.onAuthStateChanged(async (user) => {
 // =============================================
 function showWelcome(name) {
 
-    const message =
-        createMessage("", "bot");
+    const msg = createMessage("", "bot");
 
     typeWriter(
-
-        message,
-
+        msg,
         `👋 Hi ${name}, how may I help you today?`,
-
         18
     );
 }
 
 // =============================================
-// LOAD CHAT HISTORY
+// LOAD HISTORY
 // =============================================
 async function loadChatHistory() {
 
-    if (!currentUser) return;
+    if (!currentUser || !chatBox) return;
 
     chatBox.innerHTML = "";
 
-    try {
+    const chatRef =
+        collection(db, "users", currentUser.uid, "chats");
 
-        const chatRef =
-            collection(
-                db,
-                "users",
-                currentUser.uid,
-                "chats"
-            );
+    const q =
+        query(chatRef, orderBy("timestamp"), limit(50));
 
-        const q =
-            query(
-                chatRef,
-                orderBy("timestamp"),
-                limit(50)
-            );
+    const snapshot = await getDocs(q);
 
-        const snapshot =
-            await getDocs(q);
-
-        snapshot.forEach(doc => {
-
-            const data =
-                doc.data();
-
-            createMessage(
-                data.text,
-                data.sender
-            );
-        });
-
-    } catch (error) {
-
-        console.error(
-            "🔥 History Error:",
-            error
-        );
-    }
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        createMessage(data.text, data.sender);
+    });
 }
 
 // =============================================
 // SAVE MESSAGE
 // =============================================
-async function saveMessage(
-    text,
-    sender
-) {
+async function saveMessage(text, sender) {
 
     if (!currentUser) return;
 
-    try {
+    const chatRef =
+        collection(db, "users", currentUser.uid, "chats");
 
-        const chatRef =
-            collection(
-                db,
-                "users",
-                currentUser.uid,
-                "chats"
-            );
-
-        await addDoc(chatRef, {
-
-            text,
-            sender,
-
-            timestamp:
-                new Date()
-        });
-
-    } catch (error) {
-
-        console.error(
-            "🔥 Save Error:",
-            error
-        );
-    }
+    await addDoc(chatRef, {
+        text,
+        sender,
+        timestamp: new Date()
+    });
 }
 
 // =============================================
-// SEND MESSAGE
+// SEND MESSAGE (FIXED SAFE VERSION)
 // =============================================
 async function sendMessage() {
 
-    const message =
-        userInput.value.trim();
+    if (!userInput || !chatBox || !currentUser) return;
 
-    if (
-        !message ||
-        !currentUser
-    ) return;
+    const message = userInput.value.trim();
+    if (!message) return;
 
-    // DISABLE
     userInput.disabled = true;
     sendBtn.disabled = true;
 
-    // USER MESSAGE
-    createMessage(
-        message,
-        "user"
-    );
+    createMessage(message, "user");
+    await saveMessage(message, "user");
 
-    await saveMessage(
-        message,
-        "user"
-    );
-
-    // CLEAR INPUT
     userInput.value = "";
 
-    // THINKING UI
-    const thinking =
-        createThinkingMessage();
+    const thinking = createThinkingMessage();
 
     try {
 
-        // FETCH
-        const response =
-            await fetch(API_URL, {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                message,
+                userId: currentUser.uid
+            })
+        });
 
-                method: "POST",
-
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
-
-                body: JSON.stringify({
-
-                    message,
-
-                    userId:
-                        currentUser.uid
-                })
-            });
-
-        const data =
-            await response.json();
+        const data = await response.json();
 
         thinking.remove();
 
         if (!response.ok) {
-
-            throw new Error(
-                data.reply ||
-                "Connection failed"
-            );
+            throw new Error(data.reply || "Connection failed");
         }
 
-        // BOT MESSAGE
-        const botMessage =
-            createMessage("", "bot");
+        const botMsg = createMessage("", "bot");
+        typeWriter(botMsg, data.reply, 8);
 
-        typeWriter(
-            botMessage,
-            data.reply,
-            8
-        );
-
-        await saveMessage(
-            data.reply,
-            "bot"
-        );
+        await saveMessage(data.reply, "bot");
 
     } catch (error) {
 
         thinking.remove();
 
-        createMessage(
-            `⚠️ ${error.message}`,
-            "bot"
-        );
-    }
+        createMessage(`⚠️ ${error.message}`, "bot");
 
-    finally {
+    } finally {
 
         userInput.disabled = false;
         sendBtn.disabled = false;
-
         userInput.focus();
     }
 }
@@ -310,59 +193,39 @@ async function sendMessage() {
 // =============================================
 // CREATE MESSAGE
 // =============================================
-function createMessage(
-    text,
-    sender
-) {
+function createMessage(text, sender) {
 
-    const message =
-        document.createElement("div");
+    const msg = document.createElement("div");
+    msg.className = `message ${sender}`;
+    msg.innerHTML = text;
 
-    message.className =
-        `message ${sender}`;
-
-    message.innerHTML = text;
-
-    // ELITE STYLE
-    message.style.padding = "14px";
-    message.style.margin = "12px";
-    message.style.borderRadius = "16px";
-    message.style.fontFamily = "'Outfit', sans-serif";
-    message.style.lineHeight = "1.6";
-    message.style.animation =
-        "fadeIn 0.4s ease";
+    msg.style.padding = "14px";
+    msg.style.margin = "12px";
+    msg.style.borderRadius = "16px";
+    msg.style.lineHeight = "1.6";
+    msg.style.animation = "fadeIn 0.3s ease";
 
     if (sender === "user") {
 
-        message.style.background =
+        msg.style.background =
             "linear-gradient(45deg,#ff0033,#660000)";
-
-        message.style.color = "white";
-
-        message.style.marginLeft = "auto";
-
-        message.style.maxWidth = "80%";
+        msg.style.color = "white";
+        msg.style.marginLeft = "auto";
+        msg.style.maxWidth = "80%";
 
     } else {
 
-        message.style.background =
+        msg.style.background =
             "rgba(255,255,255,0.05)";
-
-        message.style.border =
+        msg.style.border =
             "1px solid rgba(255,0,51,0.2)";
-
-        message.style.color =
-            "#ffffff";
-
-        message.style.maxWidth =
-            "85%";
+        msg.style.maxWidth = "85%";
     }
 
-    chatBox.appendChild(message);
-
+    chatBox.appendChild(msg);
     scrollToBottom();
 
-    return message;
+    return msg;
 }
 
 // =============================================
@@ -370,70 +233,37 @@ function createMessage(
 // =============================================
 function createThinkingMessage() {
 
-    const thinking =
-        document.createElement("div");
+    const div = document.createElement("div");
+    div.className = "message bot thinking";
 
-    thinking.className =
-        "message bot";
-
-    thinking.innerHTML = `
-
-        <div style="
-            display:flex;
-            align-items:center;
-            gap:12px;
-            padding:10px;
-        ">
-
+    div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;">
             <div class="brain-loader"></div>
-
-            <div style="
-                color:#ff3355;
-                font-weight:600;
-                font-family:'Orbitron',sans-serif;
-                text-shadow:0 0 10px red;
-            ">
-                🧠 CymorAI is thinking...
-            </div>
-
+            🧠 CymorAI is thinking...
         </div>
     `;
 
-    chatBox.appendChild(thinking);
-
+    chatBox.appendChild(div);
     scrollToBottom();
 
-    return thinking;
+    return div;
 }
 
 // =============================================
 // TYPEWRITER
 // =============================================
-function typeWriter(
-    element,
-    text,
-    speed = 10
-) {
+function typeWriter(element, text, speed = 10) {
 
     let i = 0;
-
     element.innerHTML = "";
 
     function type() {
 
         if (i < text.length) {
-
-            element.innerHTML +=
-                text.charAt(i);
-
+            element.innerHTML += text.charAt(i);
             i++;
-
             scrollToBottom();
-
-            setTimeout(
-                type,
-                speed
-            );
+            setTimeout(type, speed);
         }
     }
 
@@ -441,142 +271,33 @@ function typeWriter(
 }
 
 // =============================================
-// AUTO SCROLL
+// SCROLL
 // =============================================
 function scrollToBottom() {
-
     chatBox.scrollTo({
-
-        top:
-            chatBox.scrollHeight,
-
-        behavior:
-            "smooth"
+        top: chatBox.scrollHeight,
+        behavior: "smooth"
     });
 }
 
 // =============================================
-// ENTER KEY
+// KEY HANDLER
 // =============================================
 function handleKey(event) {
-
-    if (
-        event.key === "Enter"
-    ) {
-
-        sendMessage();
-    }
+    if (event.key === "Enter") sendMessage();
 }
 
 // =============================================
-// QUICK PROMPTS
+// PROMPT
 // =============================================
 function setPrompt(text) {
-
     userInput.value = text;
-
     userInput.focus();
 }
 
 // =============================================
-// BUTTON STYLE
+// GLOBAL EXPORTS
 // =============================================
-if (sendBtn) {
-
-    sendBtn.style.background =
-        "linear-gradient(45deg,#ff0033,#660000)";
-
-    sendBtn.style.border = "none";
-
-    sendBtn.style.color = "white";
-
-    sendBtn.style.borderRadius =
-        "14px";
-
-    sendBtn.style.padding =
-        "14px 18px";
-
-    sendBtn.style.cursor =
-        "pointer";
-
-    sendBtn.style.boxShadow =
-        "0 0 20px rgba(255,0,0,0.5)";
-
-    sendBtn.style.fontSize =
-        "18px";
-
-    sendBtn.style.transition =
-        "0.3s";
-}
-
-// =============================================
-// GLOWING BRAIN STYLE
-// =============================================
-const style =
-    document.createElement("style");
-
-style.innerHTML = `
-
-.brain-loader{
-
-    width:18px;
-    height:18px;
-
-    border-radius:50%;
-
-    background:#ff0033;
-
-    box-shadow:
-        0 0 10px #ff0033,
-        0 0 20px #ff0033,
-        0 0 35px #ff0033;
-
-    animation:
-        pulseBrain 1s infinite;
-}
-
-@keyframes pulseBrain{
-
-    0%{
-        transform:scale(1);
-        opacity:1;
-    }
-
-    50%{
-        transform:scale(1.3);
-        opacity:0.6;
-    }
-
-    100%{
-        transform:scale(1);
-        opacity:1;
-    }
-}
-
-@keyframes fadeIn{
-
-    from{
-        opacity:0;
-        transform:translateY(10px);
-    }
-
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
-}
-`;
-
-document.head.appendChild(style);
-
-// =============================================
-// GLOBAL ACCESS
-// =============================================
-window.sendMessage =
-    sendMessage;
-
-window.setPrompt =
-    setPrompt;
-
-window.handleKey =
-    handleKey;
+window.sendMessage = sendMessage;
+window.setPrompt = setPrompt;
+window.handleKey = handleKey;
