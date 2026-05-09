@@ -9,30 +9,20 @@
 
     <style>
         /* ===================================
-           GLOBAL CORE & RESET
+           CORE RESET - PREVENTS SCROLL BUGS
         =================================== */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
-        :root {
-            --bg: #020617;
-            --panel: rgba(10, 15, 30, 0.95);
-            --red: #ff0033;
-            --neon-green: #00ffaa;
-            --border: rgba(0, 255, 170, 0.15);
-            --glass: rgba(255, 255, 255, 0.04);
-        }
-
         html, body {
             height: 100%;
             width: 100%;
-            overflow: hidden;
+            overflow: hidden; /* Stops the whole page from scrolling */
+            background: #000;
             font-family: 'Outfit', sans-serif;
-            background: radial-gradient(circle at top, #1a0000 0%, #020617 60%), #000;
-            color: #e2e8f0;
         }
 
         /* ===================================
-           LOGIN SCREEN (THE "FIXED" LOOK)
+           LOGIN SCREEN (RESTORED)
         =================================== */
         .login-screen {
             position: fixed;
@@ -47,175 +37,109 @@
         .login-box {
             width: 90%;
             max-width: 380px;
-            padding: 35px;
-            border-radius: 24px;
-            background: rgba(10, 15, 30, 0.8);
+            padding: 30px;
+            border-radius: 20px;
+            background: rgba(10, 15, 30, 0.85);
             border: 1px solid rgba(255, 0, 51, 0.3);
-            box-shadow: 0 0 40px rgba(255, 0, 51, 0.15);
-            backdrop-filter: blur(20px);
+            backdrop-filter: blur(15px);
             text-align: center;
         }
 
-        .login-box h1 {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--red);
-            font-size: 28px;
-            letter-spacing: 4px;
-            margin-bottom: 8px;
-            text-shadow: 0 0 15px rgba(255, 0, 51, 0.5);
-        }
-
-        .login-box p { color: #888; font-size: 13px; margin-bottom: 25px; }
-
-        .login-box input {
-            width: 100%;
-            padding: 14px;
-            margin: 10px 0;
-            background: rgba(0, 0, 0, 0.6);
-            border: 1px solid rgba(255, 0, 51, 0.2);
-            border-radius: 12px;
-            color: white;
-            outline: none;
-            transition: 0.3s;
-        }
-
-        .login-box input:focus { border-color: var(--red); box-shadow: 0 0 10px rgba(255, 0, 51, 0.2); }
-
-        .login-box button {
-            width: 100%;
-            padding: 14px;
-            margin-top: 15px;
-            background: linear-gradient(45deg, #ff0033, #8b0000);
-            border: none;
-            color: white;
-            font-weight: bold;
-            border-radius: 12px;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+        .login-box h1 { font-family: 'Orbitron'; color: #ff0033; letter-spacing: 2px; margin-bottom: 20px; }
+        .login-box input { width: 100%; padding: 12px; margin: 8px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; }
+        .login-box button { width: 100%; padding: 12px; margin-top: 10px; background: #ff0033; border: none; color: #fff; font-weight: bold; border-radius: 10px; }
 
         /* ===================================
-           APP LAYOUT (CHART ENGINE)
+           APP LAYOUT (THE FIX)
         =================================== */
         #app {
-            display: none; /* Controlled by script.js */
-            height: 100vh;
+            display: none;
+            height: 100vh; /* Fixed height to viewport */
             width: 100vw;
-            flex-direction: column;
+            flex-direction: column; /* Stack header, chips, box, input */
+            background: radial-gradient(circle at top, #1a0000 0%, #020617 60%);
         }
 
-        .chat-panel {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            width: 100%;
-            overflow: hidden;
-        }
-
-        /* Header */
         .chat-header {
-            flex-shrink: 0;
-            padding: 18px 20px;
-            background: rgba(10, 14, 20, 0.9);
-            border-bottom: 1px solid var(--border);
+            flex-shrink: 0; /* Header never shrinks */
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid rgba(0, 255, 170, 0.1);
         }
 
-        /* Suggestions */
         .suggestion-chips {
-            flex-shrink: 0;
+            flex-shrink: 0; /* Chips never shrink */
             display: flex;
-            gap: 10px;
-            padding: 12px;
+            gap: 8px;
+            padding: 10px;
             overflow-x: auto;
-            background: rgba(0,0,0,0.2);
             scrollbar-width: none;
         }
         .suggestion-chips::-webkit-scrollbar { display: none; }
 
         .chip {
-            background: var(--glass);
-            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 255, 170, 0.2);
             color: #00ffaa;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 11px;
             white-space: nowrap;
         }
 
-        /* Chat Messages Area (🔥 THE FIX) */
+        /* THE MAGIC FIX: Chat box grows/shrinks, others stay fixed */
         .chat-box {
-            flex: 1;
-            min-height: 0; 
+            flex: 1; 
             overflow-y: auto;
             padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 18px;
+            gap: 15px;
             -webkit-overflow-scrolling: touch;
         }
 
-        /* Message Bubbles */
-        .message {
-            max-width: 85%;
-            padding: 14px 18px;
-            border-radius: 20px;
-            font-size: 15px;
-            line-height: 1.5;
-            animation: slideUp 0.3s ease;
-        }
+        /* Message Styling */
+        .message { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.4; }
+        .message.user { align-self: flex-end; background: #004e92; color: #fff; border-bottom-right-radius: 4px; }
+        .message.bot { align-self: flex-start; background: rgba(255,255,255,0.05); border: 1px solid rgba(0,255,170,0.15); border-bottom-left-radius: 4px; }
 
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .message.user { align-self: flex-end; background: linear-gradient(135deg, #004e92, #000428); color: white; border-bottom-right-radius: 4px; }
-        .message.bot { align-self: flex-start; background: var(--glass); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
-
-        /* Input Section (🔥 ALWAYS VISIBLE) */
+        /* INPUT SECTION: Fixed at the very bottom */
         .input-section {
-            flex-shrink: 0;
+            flex-shrink: 0; /* Input area never shrinks or moves */
             display: flex;
-            gap: 12px;
-            padding: 18px;
+            gap: 10px;
+            padding: 15px;
             background: #0a0e14;
-            border-top: 1px solid var(--border);
-            align-items: center;
+            border-top: 1px solid rgba(0, 255, 170, 0.1);
         }
 
         #userInput {
             flex: 1;
             background: #000;
-            border: 1px solid var(--border);
-            padding: 14px 20px;
+            border: 1px solid #333;
+            padding: 12px 18px;
             border-radius: 25px;
-            color: white;
+            color: #fff;
             outline: none;
-            font-size: 15px;
+            font-size: 16px; /* Prevents iOS zoom-in on focus */
         }
 
         #sendBtn {
-            width: 50px;
-            height: 50px;
-            background: var(--neon-green);
+            width: 45px;
+            height: 45px;
+            background: #00ffaa;
             border: none;
             border-radius: 50%;
             color: #000;
-            font-size: 20px;
-            cursor: pointer;
+            font-size: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: 0.2s;
-            flex-shrink: 0; /* Prevents button from squishing */
+            cursor: pointer;
+            flex-shrink: 0;
         }
-
-        #sendBtn:active { transform: scale(0.9); }
     </style>
 </head>
 
@@ -224,43 +148,40 @@
     <div class="login-screen" id="loginScreen">
         <div class="login-box">
             <h1>CYMOR AI</h1>
-            <p>NEURAL ACCESS TERMINAL</p>
+            <p style="color: #666; font-size: 12px; margin-bottom: 15px;">NEURAL ACCESS TERMINAL</p>
             <input type="text" id="name" placeholder="Full Name">
             <input type="email" id="email" placeholder="Email Address">
             <input type="password" id="password" placeholder="Password">
-            <button onclick="window.handleSignup()">Initialize Connection</button>
-            <button onclick="window.handleLogin()" style="background: transparent; border: 1px solid var(--red); margin-top: 10px;">Login Existing</button>
+            <button onclick="window.handleSignup()">Create Account</button>
+            <button onclick="window.handleLogin()" style="background:transparent; border: 1px solid #ff0033; margin-top: 8px;">Login</button>
         </div>
     </div>
 
     <div id="app">
-        <section class="chat-panel">
-            <header class="chat-header">
-                <div>
-                    <div style="font-family: Orbitron; color: var(--neon-green); font-weight: bold; letter-spacing: 1px;">CYMOR AI</div>
-                    <div style="font-size: 10px; color: #666; text-transform: uppercase;">Neural Intelligence Interface</div>
-                </div>
-                <div style="color: var(--red); font-size: 10px; font-weight: bold; border: 1px solid var(--red); padding: 2px 6px; border-radius: 4px;">LIVE</div>
-                <span id="userName" style="display:none;"></span>
-            </header>
-
-            <div class="suggestion-chips">
-                <button class="chip" onclick="window.setPrompt('💻 CODE')">💻 CODE</button>
-                <button class="chip" onclick="window.setPrompt('🚀 MOTIVATE')">🚀 MOTIVATE</button>
-                <button class="chip" onclick="window.setPrompt('📅 PLAN')">📅 PLAN</button>
-                <button class="chip" onclick="window.setPrompt('🧠 AI')">🧠 AI</button>
+        <header class="chat-header">
+            <div>
+                <div style="font-family: Orbitron; color: #00ffaa; font-weight: bold; font-size: 18px;">CYMOR AI</div>
+                <div style="font-size: 9px; color: #555; text-transform: uppercase;">Neural Intelligence Interface</div>
             </div>
+            <div style="color: #ff0033; font-size: 10px; font-weight: bold; border: 1px solid #ff0033; padding: 2px 6px; border-radius: 4px;">LIVE</div>
+            <span id="userName" style="display:none;"></span>
+        </header>
 
-            <div class="chat-box" id="chatBox"></div>
+        <div class="suggestion-chips">
+            <button class="chip" onclick="window.setPrompt('💻 CODE')">💻 CODE</button>
+            <button class="chip" onclick="window.setPrompt('🚀 MOTIVATE')">🚀 MOTIVATE</button>
+            <button class="chip" onclick="window.setPrompt('📅 PLAN')">📅 PLAN</button>
+            <button class="chip" onclick="window.setPrompt('🧠 AI')">🧠 AI</button>
+        </div>
 
-            <div class="input-section">
-                <input id="userInput" placeholder="Transmit message..." onkeydown="window.handleKey(event)">
-                <button id="sendBtn" onclick="window.sendMessage()">➤</button>
-            </div>
-        </section>
+        <div class="chat-box" id="chatBox"></div>
+
+        <div class="input-section">
+            <input id="userInput" placeholder="Transmit message..." onkeydown="window.handleKey(event)">
+            <button id="sendBtn" onclick="window.sendMessage()">➤</button>
+        </div>
     </div>
 
     <script type="module" src="script.js"></script>
-
 </body>
 </html>
