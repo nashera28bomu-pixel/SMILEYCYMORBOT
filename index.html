@@ -582,6 +582,49 @@ body{
 }
 
 /* ===================================
+   IMAGE UPLOAD BUTTON
+=================================== */
+.upload-btn-wrapper {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.upload-btn {
+    width: 55px;
+    height: 55px;
+    border: 1px solid rgba(0, 255, 170, 0.3);
+    border-radius: 50%;
+    color: var(--green);
+    background: rgba(0, 255, 170, 0.05);
+    font-size: 20px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.3s ease;
+    box-shadow: 0 0 10px rgba(0, 255, 170, 0.1);
+}
+
+.upload-btn-wrapper input[type=file] {
+    font-size: 100px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.upload-btn:hover {
+    background: rgba(0, 255, 170, 0.15);
+    border-color: var(--green);
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(0, 255, 170, 0.3);
+}
+
+/* ===================================
    GLOWING SEND BUTTON
 =================================== */
 #sendBtn{
@@ -787,6 +830,12 @@ body{
 
     <!-- INPUT -->
     <div class="input-section">
+
+        <!-- IMAGE UPLOAD WRAPPER -->
+        <div class="upload-btn-wrapper">
+            <button class="upload-btn">📎</button>
+            <input type="file" id="imageUpload" accept="image/*">
+        </div>
 
         <input
         id="userInput"
