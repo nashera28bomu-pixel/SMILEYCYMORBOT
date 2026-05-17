@@ -51,7 +51,6 @@ window.addEventListener("DOMContentLoaded", () => {
     sendBtn = document.getElementById("sendBtn");
     imageUpload = document.getElementById("imageUpload");
 
-    // Bind Image Upload events if the elements exist
     if (imageUpload) {
         imageUpload.addEventListener("change", handleImageSelect);
     }
@@ -75,7 +74,6 @@ function handleImageSelect(e) {
     reader.onload = (event) => {
         selectedImageBase64 = event.target.result;
         
-        // Visual indicator on the attachment button that an image is staged
         const uploadBtn = document.querySelector(".upload-btn");
         if (uploadBtn) {
             uploadBtn.innerHTML = "✅";
@@ -131,14 +129,11 @@ async function sendMessage() {
     const message = userInput.value.trim();
     if (!message && !selectedImageBase64) return;
 
-    // UI Lock down during network request
     userInput.disabled = true;
     sendBtn.disabled = true;
 
-    // Create container message bubble
     const userMsgDiv = createMessage(message, "user");
 
-    // Append image if staged
     if (selectedImageBase64) {
         const imgTag = document.createElement('img');
         imgTag.src = selectedImageBase64;
@@ -171,16 +166,34 @@ async function sendMessage() {
 
         const botMsg = createMessage("", "bot");
 
-        // Image Response Process
+        // =============================================
+        // INTEGRATED IMAGE GENERATION DISPLAY
+        // =============================================
         if (data.type === "image") {
+            const timestamp = new Date().getTime();
+            const downloadUrl = data.url;
+
             botMsg.innerHTML = `
-                <img src="${data.url}" style="width:100%; border-radius:12px; margin-bottom:10px; border:1px solid var(--green);" alt="Generated Asset">
+                <div class="generated-image-container" style="position:relative;">
+                    <img src="${data.url}" 
+                         style="width:100%; border-radius:12px; margin-bottom:10px; border:1px solid var(--green); display:block;" 
+                         onload="window.scrollToBottom()"
+                         alt="AI Generated Scene">
+                    
+                    <a href="${downloadUrl}" target="_blank" download="CymorAI_${timestamp}.png" 
+                       style="display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:12px; background:rgba(0,255,170,0.1); border:1px solid var(--green); color:var(--green); border-radius:10px; text-decoration:none; font-size:13px; font-weight:600; transition:0.3s; margin-top:5px;">
+                        📥 Download Intelligence Asset
+                    </a>
+                </div>
                 <br>${data.reply}
                 <br><br><span style="font-size:11px; opacity:0.5;">✨ Powered by Cymor AI</span>
             `;
+            
             await saveMessage(`[Image Generated] ${message}`, "bot");
         } 
-        // Text Response Process
+        // =============================================
+        // STANDARD TEXT RESPONSE
+        // =============================================
         else {
             typeWriter(botMsg, data.reply + "\n\n✨ Powered by Cymor AI", 12);
             await saveMessage(data.reply, "bot");
@@ -252,7 +265,12 @@ async function loadChatHistory() {
 
         snapshot.forEach((docu) => {
             const data = docu.data();
-            createMessage(data.text, data.sender);
+            // Handle loading historical image generation messages safely
+            if (data.text.includes("[Image Generated]")) {
+                createMessage(data.text, data.sender);
+            } else {
+                createMessage(data.text, data.sender);
+            }
         });
 
         scrollToBottom(true);
@@ -269,7 +287,6 @@ function createMessage(text, sender) {
     msg.className = `message ${sender}`;
     msg.innerHTML = text.replace(/\n/g, "<br>");
 
-    // Colors now lean directly on the stylesheet logic instead of overwriting classes inline
     chatBox.appendChild(msg);
     scrollToBottom();
     return msg;
@@ -311,7 +328,7 @@ function scrollToBottom(instant = false) {
     } else {
         setTimeout(() => {
             chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
-        }, 40);
+        }, 100);
     }
 }
 
@@ -328,6 +345,7 @@ function sendWelcome(name) {
 // ENGINE WINDOW HOOKS
 // =============================================
 window.sendMessage = sendMessage;
+window.scrollToBottom = scrollToBottom;
 
 window.handleKey = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -343,7 +361,7 @@ window.setPrompt = (text) => {
 };
 
 // =============================================
-// COMPONENT SPECIFIC KEYFRAMES
+// STYLE INJECTION
 // =============================================
 const style = document.createElement("style");
 style.innerHTML = `
@@ -351,7 +369,13 @@ style.innerHTML = `
   0% { transform:scale(1); opacity:1; }
   50% { transform:scale(1.2); opacity:0.6; }
   100% { transform:scale(1); opacity:1; }
-}`;
+}
+.generated-image-container a:hover {
+    background: var(--green) !important;
+    color: #000 !important;
+    box-shadow: 0 0 15px var(--green);
+}
+`;
 document.head.appendChild(style);
 
 console.log("🚀 CYMOR AI BRANDED SYSTEM OPERATIONAL");
