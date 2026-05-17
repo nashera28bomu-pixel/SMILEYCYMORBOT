@@ -28,7 +28,7 @@ const client = new OpenAI({
 const TEXT_MODEL = "llama-3.1-8b-instant";
 const VISION_MODEL = "llama-3.2-11b-vision-preview";
 
-// 🔥 FIX: Track rate limits dynamically per user instead of using a single global lock
+// Track rate limits dynamically per user
 const userRateLimits = new Map();
 
 // =====================================================
@@ -58,8 +58,6 @@ function normalizeImage(image) {
 // =====================================================
 // BRANDING & IDENTITY HELPERS
 // =====================================================
-const BRAND_FOOTER = `\n\n✨ Powered by Cymor AI`;
-
 function isCreatorQuestion(text = "") {
     const q = text.toLowerCase();
     return (
@@ -76,10 +74,10 @@ function isCreatorQuestion(text = "") {
 app.post("/chat", async (req, res) => {
     try {
         const { message, image, images, userId } = req.body;
-        const trackingId = userId || req.ip; // Fallback to IP address if userId is unassigned
+        const trackingId = userId || req.ip;
         const now = Date.now();
 
-        // 🔥 FIX: Per-user rate-limiting evaluation prevents user cross-locking
+        // Per-user rate-limiting
         if (userRateLimits.has(trackingId)) {
             const lastRequestTime = userRateLimits.get(trackingId);
             if (now - lastRequestTime < 1500) {
@@ -91,7 +89,7 @@ app.post("/chat", async (req, res) => {
         }
         userRateLimits.set(trackingId, now);
 
-        // Cleanup stale entries in the rate-limiter map over time to prevent memory growth
+        // Cleanup rate-limiter map
         if (userRateLimits.size > 1000) {
             const clearThreshold = now - 5000;
             for (const [key, val] of userRateLimits.entries()) {
@@ -99,26 +97,20 @@ app.post("/chat", async (req, res) => {
             }
         }
 
-        // =====================================================
-        // CREATOR QUESTION (IDENTITY INTERCEPT)
-        // =====================================================
+        // 1. Creator Identity Check
         if (message && isCreatorQuestion(message)) {
             return res.json({
                 type: "text",
-                // 🔥 FIX: Removed direct footer concatenation here since the client script appends it natively
                 reply: "The Legendary Smiley Cymor, the CEO of Cymor Tech Services.",
                 mode: "identity",
                 userId: userId || null
             });
         }
 
-        // =====================================================
-        // IMAGE GENERATION PIPELINE
-        // =====================================================
+        // 2. Image Generation Pipeline
         if (message && message.toLowerCase().startsWith("generate")) {
             const prompt = message.replace(/generate/i, "").trim();
             const seed = Math.floor(Math.random() * 999999);
-
             const imageUrl = `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1024&height=1024&seed=${seed}&nologo=true`;
 
             return res.json({
@@ -128,27 +120,16 @@ app.post("/chat", async (req, res) => {
             });
         }
 
-        // =====================================================
-        // VISION ENGINE INTERACTION MODE
-        // =====================================================
+        // 3. Vision Mode
         const hasImages = image || (images && images.length);
-
         if (hasImages) {
             const imageList = images?.length ? images : [image];
-            const content = [
-                {
-                    type: "text",
-                    text: message || "Analyze these images in detail."
-                }
-            ];
+            const content = [{ type: "text", text: message || "Analyze these images in detail." }];
 
             for (const img of imageList) {
                 const normalized = normalizeImage(img);
                 if (normalized) {
-                    content.push({
-                        type: "image_url",
-                        image_url: { url: normalized }
-                    });
+                    content.push({ type: "image_url", image_url: { url: normalized } });
                 }
             }
 
@@ -170,9 +151,7 @@ app.post("/chat", async (req, res) => {
             });
         }
 
-        // =====================================================
-        // STANDARD NLP TEXT MODE
-        // =====================================================
+        // 4. Standard Text Mode
         if (!message) {
             return res.status(400).json({
                 type: "text",
@@ -199,14 +178,22 @@ app.post("/chat", async (req, res) => {
         });
 
     } catch (error) {
+        // =====================================================
+        // GRANULAR ERROR HANDLING (INTEGRATED)
+        // =====================================================
         console.error("🔥 CYMOR SERVER ERROR:", error);
 
         let msg = "⚠️ Neural Core Execution Failure.";
-        if (error?.message?.includes("429")) {
-            msg = "⚠️ Engine rate limit reached. Please pause processing.";
+        let statusCode = error.status || 500;
+
+        // Check for specific error statuses or message content
+        if (statusCode === 413 || error.message?.includes("too large")) {
+            msg = "⚠️ Image payload too large. Try a smaller file.";
+        } else if (statusCode === 429 || error.message?.includes("limit reached")) {
+            msg = "⚠️ Rate limit reached. Wait 60 seconds.";
         }
 
-        return res.status(500).json({
+        return res.status(statusCode).json({
             type: "text",
             reply: msg
         });
@@ -214,20 +201,15 @@ app.post("/chat", async (req, res) => {
 });
 
 // =====================================================
-// ENGINE DIAGNOSTIC HEALTH CHECK
+// HEALTH & UI
 // =====================================================
 app.get("/health", (req, res) => {
     res.json({
         status: "online",
-        vision_model: VISION_MODEL,
-        text_model: TEXT_MODEL,
         uptime: Math.floor(process.uptime()) + "s"
     });
 });
 
-// =====================================================
-// ROOT LANDING VISUAL OVERLAY
-// =====================================================
 app.get("/", (req, res) => {
     res.send(`
         <body style="background:#000;color:#00ffaa;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;margin:0;">
@@ -240,19 +222,6 @@ app.get("/", (req, res) => {
     `);
 });
 
-// =====================================================
-// INITIATE LIFTOFF
-// =====================================================
 app.listen(PORT, "0.0.0.0", () => {
-    console.log(`
-╔══════════════════════════════════╗
-║        🚀 CYMOR AI PRO           ║
-║     MULTIMODAL VISION CORE      ║
-╠══════════════════════════════════╣
-║ Vision : ENABLED                ║
-║ Text   : FAST MODE              ║
-║ Port   : ${PORT}                ║
-║ Status : ULTRA ONLINE ⚡         ║
-╚══════════════════════════════════╝
-`);
+    console.log(`🚀 CYMOR AI PRO OPERATIONAL ON PORT ${PORT}`);
 });
