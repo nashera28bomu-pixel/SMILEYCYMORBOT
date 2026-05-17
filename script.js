@@ -1,10 +1,8 @@
 // =============================================
-// CYMOR AI ELITE SCRIPT
-// UPDATED WITH VISION & IMAGE GENERATION
+// CYMOR AI ELITE SCRIPT (BRANDED VERSION)
 // =============================================
 
 import { auth, db } from "./firebase.js";
-
 import {
     collection,
     addDoc,
@@ -31,9 +29,9 @@ const API_URL =
 // =============================================
 // GLOBALS
 // =============================================
-let chatBox, userInput, sendBtn;
+let chatBox, userInput, sendBtn, imageUpload;
 let currentUser = null;
-let selectedImageBase64 = null; // New Global for Images
+let selectedImageBase64 = null;
 
 const deviceInfo = navigator.userAgent;
 let detectedCountry = "Unknown";
@@ -45,23 +43,29 @@ try {
 }
 
 // =============================================
-// DOM LOADED
+// DOM INITIALIZATION
 // =============================================
 window.addEventListener("DOMContentLoaded", () => {
     chatBox = document.getElementById("chatBox");
     userInput = document.getElementById("userInput");
     sendBtn = document.getElementById("sendBtn");
+    imageUpload = document.getElementById("imageUpload");
+
+    // Bind Image Upload events if the elements exist
+    if (imageUpload) {
+        imageUpload.addEventListener("change", handleImageSelect);
+    }
+    
     console.log("✅ CYMOR UI INITIALIZED");
 });
 
 // =============================================
-// IMAGE HANDLING FUNCTIONS (GLOBAL)
+// IMAGE HANDLING
 // =============================================
-window.handleImageSelect = (e) => {
+function handleImageSelect(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Optional: Add size check (Groq limit is ~4MB for Base64)
     if (file.size > 4 * 1024 * 1024) {
         alert("Image too large. Please select an image under 4MB.");
         return;
@@ -70,29 +74,42 @@ window.handleImageSelect = (e) => {
     const reader = new FileReader();
     reader.onload = (event) => {
         selectedImageBase64 = event.target.result;
-        document.getElementById('previewImg').src = selectedImageBase64;
-        document.getElementById('imagePreview').style.display = 'flex';
+        
+        // Visual indicator on the attachment button that an image is staged
+        const uploadBtn = document.querySelector(".upload-btn");
+        if (uploadBtn) {
+            uploadBtn.innerHTML = "✅";
+            uploadBtn.style.borderColor = "var(--green)";
+        }
     };
     reader.readAsDataURL(file);
-};
+}
 
 window.clearImage = () => {
     selectedImageBase64 = null;
-    document.getElementById('imagePreview').style.display = 'none';
-    document.getElementById('imageInput').value = '';
+    if (imageUpload) imageUpload.value = '';
+    
+    const uploadBtn = document.querySelector(".upload-btn");
+    if (uploadBtn) {
+        uploadBtn.innerHTML = "📎";
+        uploadBtn.style.borderColor = "";
+    }
 };
 
 // =============================================
-// AUTH STATE
+// AUTH STATE MANAGEMENT
 // =============================================
 auth.onAuthStateChanged(async (user) => {
+    const loginScreen = document.getElementById("loginScreen");
+    const appContainer = document.getElementById("app");
+
     if (user) {
         currentUser = user;
-        document.getElementById("loginScreen").style.display = "none";
-        document.getElementById("app").style.display = "flex";
+        if (loginScreen) loginScreen.style.display = "none";
+        if (appContainer) appContainer.style.display = "flex";
 
         const firstName = user.displayName ? user.displayName.split(" ")[0] : "Explorer";
-        
+
         await updateUserAnalytics(user);
         await loadChatHistory();
 
@@ -100,28 +117,28 @@ auth.onAuthStateChanged(async (user) => {
             sendWelcome(firstName);
         }
     } else {
-        document.getElementById("loginScreen").style.display = "flex";
-        document.getElementById("app").style.display = "none";
+        if (loginScreen) loginScreen.style.display = "flex";
+        if (appContainer) appContainer.style.display = "none";
     }
 });
 
 // =============================================
-// CORE CHAT LOGIC
+// CORE CHAT ACTIONS
 // =============================================
 async function sendMessage() {
     if (!userInput || !chatBox || !currentUser) return;
 
     const message = userInput.value.trim();
-    
-    // Prevent sending empty data
     if (!message && !selectedImageBase64) return;
 
-    // LOCK UI
+    // UI Lock down during network request
     userInput.disabled = true;
     sendBtn.disabled = true;
 
-    // USER BUBBLE (Logic to show text + image if present)
+    // Create container message bubble
     const userMsgDiv = createMessage(message, "user");
+
+    // Append image if staged
     if (selectedImageBase64) {
         const imgTag = document.createElement('img');
         imgTag.src = selectedImageBase64;
@@ -129,13 +146,11 @@ async function sendMessage() {
         userMsgDiv.appendChild(imgTag);
     }
 
-    // Capture image and clear preview for next message
     const currentImgData = selectedImageBase64;
     window.clearImage();
     userInput.value = "";
 
-    await saveMessage(message || "[Neural Image Data]", "user");
-
+    await saveMessage(message || "[Image]", "user");
     const thinking = createThinkingMessage();
 
     try {
@@ -152,23 +167,30 @@ async function sendMessage() {
         const data = await response.json();
         thinking.remove();
 
-        if (!response.ok) throw new Error(data.reply || "Neural Core Interrupted");
+        if (!response.ok) throw new Error(data.reply || "Engine connection failure.");
 
-        // BOT RESPONSE
         const botMsg = createMessage("", "bot");
 
-        // Check if bot returned a generated image or just text
+        // Image Response Process
         if (data.type === "image") {
-            botMsg.innerHTML = `<img src="${data.url}" style="width:100%; border-radius:12px; margin-bottom:10px; border:1px solid var(--green);"><br>${data.reply.replace(/\n/g, "<br>")}`;
-            await saveMessage(`[Generated Image]: ${message}`, "bot");
-        } else {
-            typeWriter(botMsg, data.reply, 12);
+            botMsg.innerHTML = `
+                <img src="${data.url}" style="width:100%; border-radius:12px; margin-bottom:10px; border:1px solid var(--green);" alt="Generated Asset">
+                <br>${data.reply}
+                <br><br><span style="font-size:11px; opacity:0.5;">✨ Powered by Cymor AI</span>
+            `;
+            await saveMessage(`[Image Generated] ${message}`, "bot");
+        } 
+        // Text Response Process
+        else {
+            typeWriter(botMsg, data.reply + "\n\n✨ Powered by Cymor AI", 12);
             await saveMessage(data.reply, "bot");
         }
 
     } catch (error) {
-        if (document.querySelector(".thinking")) document.querySelector(".thinking").remove();
-        createMessage(`⚠️ ${error.message}`, "bot");
+        if (document.querySelector(".thinking")) {
+            document.querySelector(".thinking").remove();
+        }
+        createMessage(`⚠️ Error: ${error.message}`, "bot");
     } finally {
         userInput.disabled = false;
         sendBtn.disabled = false;
@@ -177,7 +199,7 @@ async function sendMessage() {
 }
 
 // =============================================
-// FIREBASE ANALYTICS & HISTORY
+// DATABASE OPERATIONS
 // =============================================
 async function updateUserAnalytics(user) {
     try {
@@ -191,15 +213,20 @@ async function updateUserAnalytics(user) {
             lastActive: serverTimestamp(),
             status: "online"
         }, { merge: true });
-    } catch (error) { console.error("🔥 Analytics Error:", error); }
+    } catch (error) {
+        console.error("🔥 Analytics Sync Error:", error);
+    }
 }
 
 async function saveMessage(text, sender) {
     if (!currentUser) return;
+
     try {
         const chatRef = collection(db, "users", currentUser.uid, "chats");
         await addDoc(chatRef, {
-            text, sender, timestamp: serverTimestamp()
+            text,
+            sender,
+            timestamp: serverTimestamp()
         });
 
         const userRef = doc(db, "users", currentUser.uid);
@@ -208,38 +235,41 @@ async function saveMessage(text, sender) {
             lastActive: serverTimestamp(),
             aiRequests: increment(sender === "user" ? 1 : 0)
         });
-    } catch (error) { console.error("🔥 Save Error:", error); }
+    } catch (error) {
+        console.error("🔥 Firestore Save Error:", error);
+    }
 }
 
 async function loadChatHistory() {
     if (!currentUser || !chatBox) return;
+
     chatBox.innerHTML = "";
+
     try {
         const chatRef = collection(db, "users", currentUser.uid, "chats");
         const q = query(chatRef, orderBy("timestamp", "asc"), limit(50));
         const snapshot = await getDocs(q);
+
         snapshot.forEach((docu) => {
             const data = docu.data();
             createMessage(data.text, data.sender);
         });
+
         scrollToBottom(true);
-    } catch (error) { console.error("🔥 History Error:", error); }
+    } catch (error) {
+        console.error("🔥 History Retrieval Error:", error);
+    }
 }
 
 // =============================================
-// UI HELPERS
+// INTERFACE STRUCTURAL INJECTIONS
 // =============================================
 function createMessage(text, sender) {
     const msg = document.createElement("div");
     msg.className = `message ${sender}`;
     msg.innerHTML = text.replace(/\n/g, "<br>");
 
-    if (sender === "user") {
-        msg.style.cssText = "align-self:flex-end; background:linear-gradient(135deg,#00ffaa,#0066ff); color:#000; font-weight:600;";
-    } else {
-        msg.style.cssText = "align-self:flex-start; background:rgba(255,255,255,0.05); border:1px solid rgba(0,255,170,0.2); color:#ffffff;";
-    }
-
+    // Colors now lean directly on the stylesheet logic instead of overwriting classes inline
     chatBox.appendChild(msg);
     scrollToBottom();
     return msg;
@@ -249,9 +279,9 @@ function createThinkingMessage() {
     const div = document.createElement("div");
     div.className = "message bot thinking";
     div.innerHTML = `
-        <div style="display:flex; align-items:center; gap:10px;">
-            <div style="width:14px; height:14px; border-radius:50%; background:#00ffaa; box-shadow:0 0 10px #00ffaa; animation:pulse 1s infinite;"></div>
-            <span>🧠 CymorAI is processing...</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:12px;height:12px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 1s infinite;"></div>
+            <span style="font-size:14px; color: #a1a1aa;">CymorAI processing...</span>
         </div>`;
     chatBox.appendChild(div);
     scrollToBottom();
@@ -261,6 +291,7 @@ function createThinkingMessage() {
 function typeWriter(element, text, speed = 15) {
     let i = 0;
     element.innerHTML = "";
+
     function type() {
         if (i < text.length) {
             element.innerHTML += text.charAt(i) === "\n" ? "<br>" : text.charAt(i);
@@ -274,27 +305,53 @@ function typeWriter(element, text, speed = 15) {
 
 function scrollToBottom(instant = false) {
     if (!chatBox) return;
-    if (instant) { chatBox.scrollTop = chatBox.scrollHeight; }
-    else { setTimeout(() => { chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" }); }, 40); }
+
+    if (instant) {
+        chatBox.scrollTop = chatBox.scrollHeight;
+    } else {
+        setTimeout(() => {
+            chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
+        }, 40);
+    }
 }
 
 function sendWelcome(name) {
     const msg = createMessage("", "bot");
-    typeWriter(msg, `👋 Welcome back ${name}.\n\n🚀 CymorAI Neural Core is online. I can now analyze images you upload or generate art if you type 'generate [prompt]'.`, 18);
+    typeWriter(
+        msg,
+        `👋 Welcome back, ${name}.\n\n🚀 CymorAI Neural Core is online and optimized.`,
+        18
+    );
 }
 
 // =============================================
-// WINDOW ASSIGNMENTS
+// ENGINE WINDOW HOOKS
 // =============================================
 window.sendMessage = sendMessage;
-window.handleKey = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
-window.setPrompt = (text) => { userInput.value = text; userInput.focus(); };
+
+window.handleKey = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+};
+
+window.setPrompt = (text) => {
+    if (!userInput) return;
+    userInput.value = text;
+    userInput.focus();
+};
 
 // =============================================
-// STYLE INJECTION
+// COMPONENT SPECIFIC KEYFRAMES
 // =============================================
 const style = document.createElement("style");
-style.innerHTML = `@keyframes pulse{ 0%{transform:scale(1); opacity:1;} 50%{transform:scale(1.3); opacity:0.5;} 100%{transform:scale(1); opacity:1;} }`;
+style.innerHTML = `
+@keyframes pulse {
+  0% { transform:scale(1); opacity:1; }
+  50% { transform:scale(1.2); opacity:0.6; }
+  100% { transform:scale(1); opacity:1; }
+}`;
 document.head.appendChild(style);
 
-console.log("🚀 CYMOR AI ELITE SYSTEM LOADED");
+console.log("🚀 CYMOR AI BRANDED SYSTEM OPERATIONAL");
